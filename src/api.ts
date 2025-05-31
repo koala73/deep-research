@@ -9,6 +9,7 @@ import {
   writeFinalReport,
   ResearchProgress,
 } from './deep-research';
+import { generateFeedback } from './feedback';
 
 const app = express();
 const port = process.env.PORT || 3051;
@@ -65,17 +66,21 @@ app.post('/api/research', async (req: Request, res: Response) => {
   }
 });
 
-type JobStatus = 'pending' | 'completed' | 'error';
+type JobStatus = 'awaiting-answers' | 'pending' | 'completed' | 'error';
 interface Job {
   status: JobStatus;
   progress?: ResearchProgress;
   report?: string;
   error?: string;
+  followUpQuestions?: string[];
+  query?: string;
+  breadth?: number;
+  depth?: number;
 }
 
 const jobs: Record<string, Job> = {};
 
-app.post('/api/jobs', (req: Request, res: Response) => {
+app.post('/api/jobs', async (req: Request, res: Response) => {
   const { query, depth = 3, breadth = 3 } = req.body;
 
   if (!query) {
@@ -83,34 +88,66 @@ app.post('/api/jobs', (req: Request, res: Response) => {
   }
 
   const jobId = uuidv4();
-  jobs[jobId] = { status: 'pending' };
+  const followUpQuestions = await generateFeedback({ query });
+
+  jobs[jobId] = {
+    status: 'awaiting-answers',
+    followUpQuestions,
+    query,
+    breadth,
+    depth,
+  };
+
+  return res.json({ jobId, followUpQuestions });
+});
+
+app.post('/api/jobs/:id/answers', (req: Request, res: Response) => {
+  const job = jobs[req.params.id];
+  const { answers = [] } = req.body;
+
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+
+  if (job.status !== 'awaiting-answers') {
+    return res.status(400).json({ error: 'Job already started' });
+  }
+
+  job.status = 'pending';
+
+  const combinedQuery = `
+${job.query}
+Follow-up Questions and Answers:
+${job.followUpQuestions
+    ?.map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ''}`)
+    .join('\n')}`;
 
   (async () => {
     try {
       const { learnings, visitedUrls } = await deepResearch({
-        query,
-        breadth,
-        depth,
+        query: combinedQuery,
+        breadth: job.breadth!,
+        depth: job.depth!,
         onProgress: progress => {
-          jobs[jobId].progress = progress;
+          job.progress = progress;
         },
       });
 
       const report = await writeFinalReport({
-        prompt: query,
+        prompt: combinedQuery,
         learnings,
         visitedUrls,
       });
 
-      jobs[jobId].status = 'completed';
-      jobs[jobId].report = report;
+      job.status = 'completed';
+      job.report = report;
     } catch (error: any) {
-      jobs[jobId].status = 'error';
-      jobs[jobId].error = error instanceof Error ? error.message : String(error);
+      job.status = 'error';
+      job.error = error instanceof Error ? error.message : String(error);
     }
   })();
 
-  return res.json({ jobId });
+  return res.json({ success: true });
 });
 
 app.get('/api/jobs/:id', (req: Request, res: Response) => {

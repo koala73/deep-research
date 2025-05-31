@@ -141,6 +141,8 @@ You'll be prompted to:
 3. Specify research depth (recommended: 1-5, default: 2)
 4. Answer follow-up questions to refine the research direction
 
+The assistant asks clarifying questions before starting the actual research. Once you provide your answers, it begins gathering data and compiling the report.
+
 The system will then:
 
 1. Generate and execute search queries
@@ -189,7 +191,17 @@ curl -X POST http://localhost:3051/api/jobs \
   -d '{"query":"Quantum computing trends","breadth":3,"depth":2}'
 ```
 
-The response contains a `jobId` that can be used to poll for the report.
+The response contains a `jobId` and a list of follow-up questions that must be answered before the research begins.
+
+Submit your answers to `/api/jobs/{jobId}/answers`:
+
+```bash
+curl -X POST http://localhost:3051/api/jobs/<jobId>/answers \
+  -H 'Content-Type: application/json' \
+  -d '{"answers":["first answer","second answer"]}'
+```
+
+Once the answers are submitted, the job status changes to `pending` and the system starts researching.
 
 #### Poll for results
 
