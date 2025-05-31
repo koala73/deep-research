@@ -192,7 +192,7 @@ app.get('/keepalive', (req: Request, res: Response) => {
 });
 
 // Start the server
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Deep Research API running on port ${port}`);
 });
 
