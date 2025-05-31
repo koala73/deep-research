@@ -1,7 +1,14 @@
 import cors from 'cors';
 import express, { Request, Response } from 'express';
 
-import { deepResearch, writeFinalAnswer } from './deep-research';
+import { v4 as uuidv4 } from 'uuid';
+
+import {
+  deepResearch,
+  writeFinalAnswer,
+  writeFinalReport,
+  ResearchProgress,
+} from './deep-research';
 
 const app = express();
 const port = process.env.PORT || 3051;
@@ -56,6 +63,63 @@ app.post('/api/research', async (req: Request, res: Response) => {
       message: error instanceof Error ? error.message : String(error),
     });
   }
+});
+
+type JobStatus = 'pending' | 'completed' | 'error';
+interface Job {
+  status: JobStatus;
+  progress?: ResearchProgress;
+  report?: string;
+  error?: string;
+}
+
+const jobs: Record<string, Job> = {};
+
+app.post('/api/jobs', (req: Request, res: Response) => {
+  const { query, depth = 3, breadth = 3 } = req.body;
+
+  if (!query) {
+    return res.status(400).json({ error: 'Query is required' });
+  }
+
+  const jobId = uuidv4();
+  jobs[jobId] = { status: 'pending' };
+
+  (async () => {
+    try {
+      const { learnings, visitedUrls } = await deepResearch({
+        query,
+        breadth,
+        depth,
+        onProgress: progress => {
+          jobs[jobId].progress = progress;
+        },
+      });
+
+      const report = await writeFinalReport({
+        prompt: query,
+        learnings,
+        visitedUrls,
+      });
+
+      jobs[jobId].status = 'completed';
+      jobs[jobId].report = report;
+    } catch (error: any) {
+      jobs[jobId].status = 'error';
+      jobs[jobId].error = error instanceof Error ? error.message : String(error);
+    }
+  })();
+
+  return res.json({ jobId });
+});
+
+app.get('/api/jobs/:id', (req: Request, res: Response) => {
+  const job = jobs[req.params.id];
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+
+  return res.json(job);
 });
 
 // Start the server
