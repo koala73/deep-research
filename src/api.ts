@@ -181,6 +181,15 @@ app.get('/api/jobs/:id', (req: Request, res: Response) => {
   return res.json(job);
 });
 
+// Health check endpoint for deployment
+app.get('/', (req: Request, res: Response) => {
+  return res.status(200).json({ 
+    status: 'healthy',
+    service: 'deep-research-api',
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // Keepalive endpoint for Replit uptime monitoring
 app.get('/keepalive', (req: Request, res: Response) => {
   console.log(`Keepalive check at ${new Date().toISOString()}`);

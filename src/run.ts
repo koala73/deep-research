@@ -30,6 +30,15 @@ function askQuestion(query: string): Promise<string> {
 
 // run the agent
 async function run() {
+  const mode = process.argv[2];
+  
+  if (mode === 'api') {
+    // Import and start the API server
+    const { default: app } = await import('./api');
+    console.log('API server started successfully');
+    return;
+  }
+  
   console.log('Using model: ', getModel().modelId);
 
   // Get initial query
@@ -114,7 +123,9 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
     console.log('\nAnswer has been saved to answer.md');
   }
 
-  rl.close();
+  if (process.argv[2] !== 'api') {
+    rl.close();
+  }
 }
 
 run().catch(console.error);
