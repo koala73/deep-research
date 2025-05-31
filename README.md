@@ -175,6 +175,32 @@ OPENAI_ENDPOINT="custom_endpoint"
 CUSTOM_MODEL="custom_model"
 ```
 
+### Web API
+
+Run `npm run api` to start the API server on port `3051` (or the value of the `PORT` environment variable).
+
+#### Start a report job
+
+Send a `POST` request to `/api/jobs` with the research query and optional `breadth` and `depth`:
+
+```bash
+curl -X POST http://localhost:3051/api/jobs \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"Quantum computing trends","breadth":3,"depth":2}'
+```
+
+The response contains a `jobId` that can be used to poll for the report.
+
+#### Poll for results
+
+Fetch `/api/jobs/{jobId}` until the status changes to `completed`:
+
+```bash
+curl http://localhost:3051/api/jobs/<jobId>
+```
+
+When finished, the response will include the generated Markdown report.
+
 ## How It Works
 
 1. **Initial Setup**
