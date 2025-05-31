@@ -1,0 +1,47 @@
+entrypoint = "src/api.ts"
+modules = ["nodejs-22:v8-20230920-bd784b9"]
+
+hidden = [".config", "package-lock.json"]
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["tsx", "src/api.ts"]
+deploymentTarget = "cloudrun"
+ignorePorts = false
+
+[rules]
+  [rules.formatter]
+    commands = ["npm", "run", "format"]
+
+[languages]
+  [languages.typescript]
+    pattern = "**/{*.ts,*.tsx}"
+    
+    [languages.typescript.languageServer]
+      start = ["typescript-language-server", "--stdio"]
+
+[env]
+PATH = "/home/runner/$REPL_SLUG/.config/npm/node_global/bin:/home/runner/$REPL_SLUG/node_modules/.bin"
+npm_config_prefix = "/home/runner/$REPL_SLUG/.config/npm/node_global"
+
+[packager]
+language = "nodejs"
+
+  [packager.features]
+  packageSearch = true
+  guessImports = true
+  enabledForHosting = false
+
+[unitTest]
+language = "nodejs"
+
+[auth]
+pageEnabled = true
+buttonEnabled = false
+
+[[ports]]
+localPort = 3051
+externalPort = 80
+

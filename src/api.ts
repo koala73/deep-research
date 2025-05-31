@@ -171,6 +171,16 @@ app.get('/api/jobs/:id', (req: Request, res: Response) => {
   return res.json(job);
 });
 
+// Keepalive endpoint for Replit uptime monitoring
+app.get('/keepalive', (req: Request, res: Response) => {
+  console.log(`Keepalive check at ${new Date().toISOString()}`);
+  return res.status(200).json({ 
+    status: 'ok',
+    service: 'deep-research-api',
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Deep Research API running on port ${port}`);
