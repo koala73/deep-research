@@ -100,6 +100,7 @@ FIRECRAWL_KEY="your_firecrawl_key"
 # FIRECRAWL_BASE_URL="http://localhost:3002"
 
 OPENAI_KEY="your_openai_key"
+ACCESS_KEY="choose_a_strong_key"
 ```
 
 To use local LLM, comment out `OPENAI_KEY` and instead uncomment `OPENAI_ENDPOINT` and `OPENAI_MODEL`:
@@ -180,6 +181,9 @@ CUSTOM_MODEL="custom_model"
 ### Web API
 
 Run `npm run api` to start the API server on port `3051` (or the value of the `PORT` environment variable).
+
+All requests must include an `Authorization` header containing the value of your
+`ACCESS_KEY`.
 
 #### Start a report job
 
