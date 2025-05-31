@@ -8,11 +8,7 @@ import {
   writeFinalReport,
 } from './deep-research';
 import { generateFeedback } from './feedback';
-
-// Helper function for consistent logging
-function log(...args: any[]) {
-  console.log(...args);
-}
+import { log } from './logger';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -35,11 +31,11 @@ async function run() {
   if (mode === 'api') {
     // Import and start the API server
     const { default: app } = await import('./api');
-    console.log('API server started successfully');
+    log('API server started successfully');
     return;
   }
-  
-  console.log('Using model: ', getModel().modelId);
+
+  log('Using model: ', getModel().modelId);
 
   // Get initial query
   const initialQuery = await askQuestion('What would you like to research? ');
@@ -110,8 +106,8 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
     });
 
     await fs.writeFile('report.md', report, 'utf-8');
-    console.log(`\n\nFinal Report:\n\n${report}`);
-    console.log('\nReport has been saved to report.md');
+    log(`\n\nFinal Report:\n\n${report}`);
+    log('\nReport has been saved to report.md');
   } else {
     const answer = await writeFinalAnswer({
       prompt: combinedQuery,
@@ -119,8 +115,8 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
     });
 
     await fs.writeFile('answer.md', answer, 'utf-8');
-    console.log(`\n\nFinal Answer:\n\n${answer}`);
-    console.log('\nAnswer has been saved to answer.md');
+    log(`\n\nFinal Answer:\n\n${answer}`);
+    log('\nAnswer has been saved to answer.md');
   }
 
   if (process.argv[2] !== 'api') {
