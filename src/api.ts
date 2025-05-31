@@ -13,10 +13,22 @@ import { generateFeedback } from './feedback';
 
 const app = express();
 const port = process.env.PORT || 3051;
+const accessKey = process.env.ACCESS_KEY;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  if (!accessKey) {
+    return next();
+  }
+  const header = req.get('Authorization');
+  if (header === accessKey || header === `Bearer ${accessKey}`) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized' });
+});
 
 // Helper function for consistent logging
 function log(...args: any[]) {
