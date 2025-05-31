@@ -1,13 +1,13 @@
-entrypoint = "src/api.ts"
-modules = ["nodejs-22:v8-20230920-bd784b9"]
+modules = ["nodejs-20", "nix"]
 
 hidden = [".config", "package-lock.json"]
+run = "npm run start"
 
 [nix]
-channel = "stable-23_11"
+channel = "stable-24_05"
 
 [deployment]
-run = ["tsx", "src/api.ts"]
+run = ["sh", "-c", "npm run start"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
 
