@@ -7,9 +7,10 @@ hidden = [".config", "package-lock.json"]
 channel = "stable-23_11"
 
 [deployment]
-run = ["tsx", "src/api.ts"]
+run = ["sh", "-c", "npm start api"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
+build = ["sh", "-c", "npm install"]
 
 [rules]
   [rules.formatter]
