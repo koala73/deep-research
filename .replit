@@ -45,3 +45,15 @@ buttonEnabled = false
 localPort = 3051
 externalPort = 80
 
+[workflows]
+runButton = "API Server"
+
+[[workflows.workflow]]
+name = "API Server"
+author = 13301678
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run api"
+
