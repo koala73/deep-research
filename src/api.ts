@@ -44,12 +44,13 @@ app.post('/api/research', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    log('\nStarting research...\n');
+    log(`\nStarting research job for "${query}" (breadth: ${breadth}, depth: ${depth})`);
 
     const { learnings, visitedUrls } = await deepResearch({
       query,
       breadth,
       depth,
+      onProgress: progress => log('Research progress:', progress),
     });
 
     log(`\n\nLearnings:\n\n${learnings.join('\n')}`);
@@ -110,11 +111,16 @@ app.post('/api/jobs', async (req: Request, res: Response) => {
     depth,
   };
 
+  log(
+    `Created job ${jobId} for query "${query}" (breadth: ${breadth}, depth: ${depth})`,
+  );
+
   return res.json({ jobId, followUpQuestions });
 });
 
 app.post('/api/jobs/:id/answers', (req: Request, res: Response) => {
-  const job = jobs[req.params.id];
+  const id = req.params.id;
+  const job = jobs[id];
   const { answers = [] } = req.body;
 
   if (!job) {
@@ -126,6 +132,7 @@ app.post('/api/jobs/:id/answers', (req: Request, res: Response) => {
   }
 
   job.status = 'pending';
+  log(`Job ${id} started`);
 
   const combinedQuery = `
 ${job.query}
@@ -142,6 +149,7 @@ ${job.followUpQuestions
         depth: job.depth!,
         onProgress: progress => {
           job.progress = progress;
+          log(`Job ${id} progress:`, progress);
         },
       });
 
@@ -153,9 +161,11 @@ ${job.followUpQuestions
 
       job.status = 'completed';
       job.report = report;
+      log(`Job ${id} completed`);
     } catch (error: any) {
       job.status = 'error';
       job.error = error instanceof Error ? error.message : String(error);
+      log(`Job ${id} error:`, job.error);
     }
   })();
 
