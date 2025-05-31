@@ -6,10 +6,7 @@ import { z } from 'zod';
 
 import { getModel, trimPrompt } from './ai/providers';
 import { systemPrompt } from './prompt';
-
-function log(...args: any[]) {
-  console.log(...args);
-}
+import { log } from './logger';
 
 export type ResearchProgress = {
   currentDepth: number;

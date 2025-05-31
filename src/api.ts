@@ -10,6 +10,7 @@ import {
   ResearchProgress,
 } from './deep-research';
 import { generateFeedback } from './feedback';
+import { log } from './logger';
 
 const app = express();
 const port = process.env.PORT || 3051;
@@ -30,10 +31,6 @@ app.use((req, res, next) => {
   return res.status(401).json({ error: 'Unauthorized' });
 });
 
-// Helper function for consistent logging
-function log(...args: any[]) {
-  console.log(...args);
-}
 
 // API endpoint to run research
 app.post('/api/research', async (req: Request, res: Response) => {
@@ -192,7 +189,7 @@ app.get('/', (req: Request, res: Response) => {
 
 // Keepalive endpoint for Replit uptime monitoring
 app.get('/keepalive', (req: Request, res: Response) => {
-  console.log(`Keepalive check at ${new Date().toISOString()}`);
+  log(`Keepalive check at ${new Date().toISOString()}`);
   return res.status(200).json({ 
     status: 'ok',
     service: 'deep-research-api',
@@ -202,7 +199,7 @@ app.get('/keepalive', (req: Request, res: Response) => {
 
 // Start the server
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Deep Research API running on port ${port}`);
+  log(`Deep Research API running on port ${port}`);
 });
 
 export default app;
