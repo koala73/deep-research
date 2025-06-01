@@ -110,6 +110,8 @@ app.post('/api/jobs', async (req: Request, res: Response) => {
     logs: [],
   };
 
+  console.log(`[CONSOLE] Created job ${jobId}, total jobs in memory: ${Object.keys(jobs).length}`);
+  console.log(`[CONSOLE] All job IDs:`, Object.keys(jobs));
   log(
     `Created job ${jobId} for query "${query}" (breadth: ${breadth}, depth: ${depth})`,
   );
@@ -122,7 +124,12 @@ app.post('/api/jobs/:id/answers', (req: Request, res: Response) => {
   const job = jobs[id];
   const { answers = [] } = req.body;
 
+  console.log(`[CONSOLE] Looking for job ${id}`);
+  console.log(`[CONSOLE] Available jobs:`, Object.keys(jobs));
+  console.log(`[CONSOLE] Job found:`, !!job);
+  
   if (!job) {
+    console.log(`[CONSOLE] Job ${id} not found in jobs object`);
     return res.status(404).json({ error: 'Job not found' });
   }
 
@@ -193,6 +200,21 @@ app.get('/api/jobs/:id', (req: Request, res: Response) => {
 
 app.get('/api/jobs/:id/logs', (req: Request, res: Response) => {
   return res.json({ logs: getJobLogs(req.params.id) });
+});
+
+// Debug endpoint to list all jobs
+app.get('/api/jobs', (req: Request, res: Response) => {
+  const jobList = Object.entries(jobs).map(([id, job]) => ({
+    id,
+    status: job.status,
+    query: job.query,
+    created: 'unknown' // We don't track creation time currently
+  }));
+  
+  return res.json({ 
+    totalJobs: Object.keys(jobs).length,
+    jobs: jobList 
+  });
 });
 
 // Health check endpoint for deployment
