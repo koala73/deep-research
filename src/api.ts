@@ -10,7 +10,7 @@ import {
   ResearchProgress,
 } from './deep-research';
 import { generateFeedback } from './feedback';
-import { log } from './logger';
+import { log, withJobContext, getJobLogs } from './logger';
 
 const app = express();
 const port = process.env.PORT || 3051;
@@ -86,6 +86,7 @@ interface Job {
   query?: string;
   breadth?: number;
   depth?: number;
+  logs?: string[];
 }
 
 const jobs: Record<string, Job> = {};
@@ -106,6 +107,7 @@ app.post('/api/jobs', async (req: Request, res: Response) => {
     query,
     breadth,
     depth,
+    logs: [],
   };
 
   log(
@@ -138,7 +140,7 @@ ${job.followUpQuestions
     ?.map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ''}`)
     .join('\n')}`;
 
-  (async () => {
+  withJobContext(id, async () => {
     try {
       const { learnings, visitedUrls } = await deepResearch({
         query: combinedQuery,
@@ -164,7 +166,7 @@ ${job.followUpQuestions
       job.error = error instanceof Error ? error.message : String(error);
       log(`Job ${id} error:`, job.error);
     }
-  })();
+  });
 
   return res.json({ success: true });
 });
@@ -175,7 +177,11 @@ app.get('/api/jobs/:id', (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Job not found' });
   }
 
-  return res.json(job);
+  return res.json({ ...job, logs: getJobLogs(req.params.id) });
+});
+
+app.get('/api/jobs/:id/logs', (req: Request, res: Response) => {
+  return res.json({ logs: getJobLogs(req.params.id) });
 });
 
 // Health check endpoint for deployment
