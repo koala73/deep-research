@@ -182,8 +182,19 @@ ${job.followUpQuestions
       job.error = error instanceof Error ? error.message : String(error);
       console.error(`[CONSOLE] Job ${id} error:`, job.error);
       console.error(`[CONSOLE] Full error stack:`, error);
+      console.error(`[CONSOLE] Error details:`, {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
       log(`Job ${id} error:`, job.error);
     }
+  }).catch(error => {
+    console.error(`[FATAL] withJobContext failed for job ${id}:`, error);
+    job.status = 'error';
+    job.error = `Context error: ${error.message}`;
+    log(`Job ${id} context error:`, error.message);
   });
 
   return res.json({ success: true });
@@ -236,9 +247,67 @@ app.get('/keepalive', (req: Request, res: Response) => {
   });
 });
 
-// Start the server
-app.listen(port, '0.0.0.0', () => {
-  log(`Deep Research API running on port ${port}`);
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught Exception:', error);
+  console.error('Stack:', error.stack);
+  log(`FATAL: Uncaught Exception - ${error.message}`);
+  // Don't exit immediately, let current operations complete
+  setTimeout(() => process.exit(1), 1000);
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Promise Rejection at:', promise, 'reason:', reason);
+  log(`FATAL: Unhandled Promise Rejection - ${reason}`);
+  // Don't exit immediately, let current operations complete
+  setTimeout(() => process.exit(1), 1000);
+});
+
+process.on('SIGTERM', () => {
+  console.log('[INFO] SIGTERM received, shutting down gracefully');
+  log('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('[INFO] SIGINT received, shutting down gracefully');
+  log('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Enhanced error handling middleware
+app.use((error: any, req: Request, res: Response, next: any) => {
+  console.error('[ERROR] Express error handler:', error);
+  log(`Express error: ${error.message}`);
+  
+  if (res.headersSent) {
+    return next(error);
+  }
+  
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: error.message,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start the server with error handling
+const server = app.listen(port, '0.0.0.0', () => {
+  log(`Deep Research API running on port ${port}`);
+  console.log(`[INFO] Server started successfully on port ${port}`);
+});
+
+server.on('error', (error: any) => {
+  console.error('[FATAL] Server error:', error);
+  log(`Server error: ${error.message}`);
+  process.exit(1);
+});
+
+// Keep alive monitoring
+setInterval(() => {
+  const memUsage = process.memoryUsage();
+  console.log(`[MONITOR] Memory usage: RSS=${Math.round(memUsage.rss/1024/1024)}MB, Heap=${Math.round(memUsage.heapUsed/1024/1024)}MB`);
+  console.log(`[MONITOR] Active jobs: ${Object.keys(jobs).length}`);
+}, 30000); // Log every 30 seconds
 
 export default app;
