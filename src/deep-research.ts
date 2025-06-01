@@ -70,6 +70,7 @@ async function generateSerpQueries({
         .describe(`List of SERP queries, max of ${numQueries}`),
     }),
   });
+  console.log(`[CONSOLE] Generated ${res.object.queries.length} SERP queries:`, res.object.queries.map(q => q.query));
   log(`Created ${res.object.queries.length} queries`, res.object.queries);
 
   return res.object.queries.slice(0, numQueries);
@@ -89,6 +90,7 @@ async function processSerpResult({
   const contents = compact(result.data.map(item => item.markdown)).map(content =>
     trimPrompt(content, 25_000),
   );
+  console.log(`[CONSOLE] Processed SERP result for "${query}", found ${contents.length} contents`);
   log(`Ran ${query}, found ${contents.length} contents`);
 
   const res = await generateObjectWithRetry({

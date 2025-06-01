@@ -131,7 +131,8 @@ app.post('/api/jobs/:id/answers', (req: Request, res: Response) => {
   }
 
   job.status = 'pending';
-  log(`Job ${id} started`);
+  console.log(`[CONSOLE] Job ${id} started with answers:`, JSON.stringify(answers, null, 2));
+  log(`Job ${id} started with ${answers.length} answers`);
 
   const combinedQuery = `
 ${job.query}
@@ -142,15 +143,22 @@ ${job.followUpQuestions
 
   withJobContext(id, async () => {
     try {
+      console.log(`[CONSOLE] Starting research for job ${id}`);
+      log(`Starting deep research for job ${id} with combined query`);
+      
       const { learnings, visitedUrls } = await deepResearch({
         query: combinedQuery,
         breadth: job.breadth!,
         depth: job.depth!,
         onProgress: progress => {
           job.progress = progress;
+          console.log(`[CONSOLE] Job ${id} progress:`, JSON.stringify(progress, null, 2));
           log(`Job ${id} progress:`, progress);
         },
       });
+
+      console.log(`[CONSOLE] Research completed for job ${id}, generating report`);
+      log(`Research completed for job ${id}, found ${learnings.length} learnings and ${visitedUrls.length} URLs`);
 
       const report = await writeFinalReport({
         prompt: combinedQuery,
@@ -160,10 +168,13 @@ ${job.followUpQuestions
 
       job.status = 'completed';
       job.report = report;
-      log(`Job ${id} completed`);
+      console.log(`[CONSOLE] Job ${id} completed successfully`);
+      log(`Job ${id} completed successfully`);
     } catch (error: any) {
       job.status = 'error';
       job.error = error instanceof Error ? error.message : String(error);
+      console.error(`[CONSOLE] Job ${id} error:`, job.error);
+      console.error(`[CONSOLE] Full error stack:`, error);
       log(`Job ${id} error:`, job.error);
     }
   });

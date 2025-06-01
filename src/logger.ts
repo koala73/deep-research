@@ -12,14 +12,19 @@ export function getJobLogs(jobId: string): string[] {
 }
 
 export function log(...args: any[]) {
+  const timestamp = new Date().toISOString();
   const message = args
     .map(arg => (typeof arg === 'string' ? arg : JSON.stringify(arg, null, 2)))
     .join(' ');
-  console.log(message);
-
+  
+  const logMessage = `[${timestamp}] ${message}`;
+  
+  // Always log to console
+  console.log(logMessage);
+  
   const jobId = storage.getStore();
   if (jobId) {
     jobLogs[jobId] = jobLogs[jobId] ?? [];
-    jobLogs[jobId].push(message);
+    jobLogs[jobId].push(logMessage);
   }
 }
