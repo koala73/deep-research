@@ -7,7 +7,7 @@ hidden = [".config", "package-lock.json"]
 channel = "stable-23_11"
 
 [deployment]
-run = ["sh", "-c", "npm run api"]
+run = ["sh", "-c", "npm start api"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
 build = ["sh", "-c", "npm install"]
