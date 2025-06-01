@@ -148,10 +148,25 @@ ${job.followUpQuestions
     ?.map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ''}`)
     .join('\n')}`;
 
+  // Add job timeout protection
+  const jobTimeout = setTimeout(() => {
+    if (job.status === 'pending') {
+      console.error(`[TIMEOUT] Job ${id} timed out after 10 minutes`);
+      job.status = 'error';
+      job.error = 'Job timed out after 10 minutes';
+      log(`Job ${id} timed out`);
+    }
+  }, 10 * 60 * 1000); // 10 minutes
+
   withJobContext(id, async () => {
     try {
-      console.log(`[CONSOLE] Starting research for job ${id}`);
+      console.log(`[CONSOLE] ====== STARTING JOB ${id} ======`);
+      console.log(`[CONSOLE] Query: ${combinedQuery.substring(0, 200)}...`);
+      console.log(`[CONSOLE] Breadth: ${job.breadth}, Depth: ${job.depth}`);
       log(`Starting deep research for job ${id} with combined query`);
+      
+      console.log(`[CONSOLE] Calling deepResearch...`);
+      const startTime = Date.now();
       
       const { learnings, visitedUrls } = await deepResearch({
         query: combinedQuery,
@@ -159,38 +174,53 @@ ${job.followUpQuestions
         depth: job.depth!,
         onProgress: progress => {
           job.progress = progress;
-          console.log(`[CONSOLE] Job ${id} progress:`, JSON.stringify(progress, null, 2));
+          console.log(`[CONSOLE] Job ${id} progress: ${progress.completedQueries}/${progress.totalQueries} queries, depth ${progress.currentDepth}/${progress.totalDepth}`);
+          if (progress.currentQuery) {
+            console.log(`[CONSOLE] Current query: ${progress.currentQuery.substring(0, 100)}...`);
+          }
           log(`Job ${id} progress:`, progress);
         },
       });
 
-      console.log(`[CONSOLE] Research completed for job ${id}, generating report`);
+      const researchTime = Date.now() - startTime;
+      console.log(`[CONSOLE] Research completed for job ${id} in ${researchTime}ms`);
+      console.log(`[CONSOLE] Found ${learnings.length} learnings and ${visitedUrls.length} URLs`);
       log(`Research completed for job ${id}, found ${learnings.length} learnings and ${visitedUrls.length} URLs`);
 
+      console.log(`[CONSOLE] Generating final report for job ${id}...`);
+      const reportStartTime = Date.now();
+      
       const report = await writeFinalReport({
         prompt: combinedQuery,
         learnings,
         visitedUrls,
       });
 
+      const reportTime = Date.now() - reportStartTime;
+      console.log(`[CONSOLE] Report generated for job ${id} in ${reportTime}ms`);
+
+      clearTimeout(jobTimeout);
       job.status = 'completed';
       job.report = report;
-      console.log(`[CONSOLE] Job ${id} completed successfully`);
+      console.log(`[CONSOLE] ====== JOB ${id} COMPLETED SUCCESSFULLY ======`);
       log(`Job ${id} completed successfully`);
     } catch (error: any) {
+      clearTimeout(jobTimeout);
       job.status = 'error';
       job.error = error instanceof Error ? error.message : String(error);
+      console.error(`[CONSOLE] ====== JOB ${id} FAILED ======`);
       console.error(`[CONSOLE] Job ${id} error:`, job.error);
       console.error(`[CONSOLE] Full error stack:`, error);
       console.error(`[CONSOLE] Error details:`, {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: error.cause
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        cause: error?.cause
       });
       log(`Job ${id} error:`, job.error);
     }
   }).catch(error => {
+    clearTimeout(jobTimeout);
     console.error(`[FATAL] withJobContext failed for job ${id}:`, error);
     job.status = 'error';
     job.error = `Context error: ${error.message}`;

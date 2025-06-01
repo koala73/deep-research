@@ -187,6 +187,10 @@ export async function deepResearch({
   visitedUrls?: string[];
   onProgress?: (progress: ResearchProgress) => void;
 }): Promise<ResearchResult> {
+  console.log(`[DEEP_RESEARCH] Starting deep research - breadth: ${breadth}, depth: ${depth}`);
+  console.log(`[DEEP_RESEARCH] Query: ${query.substring(0, 200)}...`);
+  console.log(`[DEEP_RESEARCH] Existing learnings: ${learnings.length}, URLs: ${visitedUrls.length}`);
+  
   const progress: ResearchProgress = {
     currentDepth: depth,
     totalDepth: depth,
@@ -201,11 +205,13 @@ export async function deepResearch({
     onProgress?.(progress);
   };
 
+  console.log(`[DEEP_RESEARCH] Generating SERP queries...`);
   const serpQueries = await generateSerpQueries({
     query,
     learnings,
     numQueries: breadth,
   });
+  console.log(`[DEEP_RESEARCH] Generated ${serpQueries.length} SERP queries`);
 
   reportProgress({
     totalQueries: serpQueries.length,
@@ -214,15 +220,22 @@ export async function deepResearch({
 
   const limit = pLimit(ConcurrencyLimit);
 
+  console.log(`[DEEP_RESEARCH] Processing ${serpQueries.length} queries with concurrency limit ${ConcurrencyLimit}`);
+  
   const results = await Promise.all(
-    serpQueries.map(serpQuery =>
+    serpQueries.map((serpQuery, index) =>
       limit(async () => {
         try {
+          console.log(`[DEEP_RESEARCH] Processing query ${index + 1}/${serpQueries.length}: ${serpQuery.query.substring(0, 100)}...`);
+          
+          const searchStartTime = Date.now();
           const result = await firecrawl.search(serpQuery.query, {
             timeout: 15000,
             limit: 5,
             scrapeOptions: { formats: ['markdown'] },
           });
+          const searchTime = Date.now() - searchStartTime;
+          console.log(`[DEEP_RESEARCH] Search completed in ${searchTime}ms, found ${result.data.length} results`);
 
           // Collect URLs from this search
           const newUrls = compact(result.data.map(item => item.url));
