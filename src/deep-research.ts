@@ -1,5 +1,4 @@
 import FirecrawlApp, { SearchResponse } from '@mendable/firecrawl-js';
-import { generateObject } from 'ai';
 import { compact } from 'lodash-es';
 import pLimit from 'p-limit';
 import { z } from 'zod';
@@ -7,6 +6,7 @@ import { z } from 'zod';
 import { getModel, trimPrompt } from './ai/providers';
 import { systemPrompt } from './prompt';
 import { log } from './logger';
+import { generateObjectWithRetry } from './utils';
 
 export type ResearchProgress = {
   currentDepth: number;
@@ -45,7 +45,7 @@ async function generateSerpQueries({
   // optional, if provided, the research will continue from the last learning
   learnings?: string[];
 }) {
-  const res = await generateObject({
+  const res = await generateObjectWithRetry({
     model: getModel(),
     system: systemPrompt(),
     prompt: `Given the following prompt from the user, generate a list of SERP queries to research the topic. Return a maximum of ${numQueries} queries, but feel free to return less if the original prompt is clear. Make sure each query is unique and not similar to each other: <prompt>${query}</prompt>\n\n${
@@ -91,7 +91,7 @@ async function processSerpResult({
   );
   log(`Ran ${query}, found ${contents.length} contents`);
 
-  const res = await generateObject({
+  const res = await generateObjectWithRetry({
     model: getModel(),
     abortSignal: AbortSignal.timeout(60_000),
     system: systemPrompt(),
@@ -127,7 +127,7 @@ export async function writeFinalReport({
     .map(learning => `<learning>\n${learning}\n</learning>`)
     .join('\n');
 
-  const res = await generateObject({
+  const res = await generateObjectWithRetry({
     model: getModel(),
     system: systemPrompt(),
     prompt: trimPrompt(
@@ -154,7 +154,7 @@ export async function writeFinalAnswer({
     .map(learning => `<learning>\n${learning}\n</learning>`)
     .join('\n');
 
-  const res = await generateObject({
+  const res = await generateObjectWithRetry({
     model: getModel(),
     system: systemPrompt(),
     prompt: trimPrompt(
