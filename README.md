@@ -101,6 +101,9 @@ FIRECRAWL_KEY="your_firecrawl_key"
 
 OPENAI_KEY="your_openai_key"
 ACCESS_KEY="choose_a_strong_key"
+# Optional: number of learnings to include per LLM call when generating
+# the final report
+# REPORT_CHUNK_SIZE="20"
 ```
 
 To use local LLM, comment out `OPENAI_KEY` and instead uncomment `OPENAI_ENDPOINT` and `OPENAI_MODEL`:
@@ -178,6 +181,16 @@ OPENAI_ENDPOINT="custom_endpoint"
 CUSTOM_MODEL="custom_model"
 ```
 
+### Report chunk size
+
+The final report is generated in multiple pieces to avoid hitting model
+output limits. You can control how many learnings are included in each
+piece by setting `REPORT_CHUNK_SIZE` (default: 20):
+
+```bash
+# REPORT_CHUNK_SIZE="20"
+```
+
 ### Web API
 
 Run `npm run api` to start the API server on port `3051` (or the value of the `PORT` environment variable).
@@ -215,7 +228,24 @@ Fetch `/api/jobs/{jobId}` until the status changes to `completed`:
 curl http://localhost:3051/api/jobs/<jobId>
 ```
 
-When finished, the response will include the generated Markdown report.
+When finished, the response JSON includes the full Markdown report and a
+`reportUrl` field:
+
+```json
+{
+  "status": "completed",
+  "report": "# ...",
+  "reportUrl": "/api/reports/<jobId>"
+}
+```
+
+Use the `reportUrl` endpoint to download the saved report file:
+
+```bash
+curl http://localhost:3051/api/reports/<jobId> -o report.md
+```
+
+All generated reports are stored in the server's `reports/` directory.
 
 ## How It Works
 
