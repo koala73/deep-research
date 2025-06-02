@@ -47,7 +47,7 @@ localPort = 3051
 externalPort = 80
 
 [workflows]
-runButton = "API Server"
+runButton = "API Server (Auto-Restart)"
 
 [[workflows.workflow]]
 name = "API Server"
@@ -57,4 +57,13 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run api"
+
+[[workflows.workflow]]
+name = "API Server (Auto-Restart)"
+author = 13301678
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run api:restart"
 

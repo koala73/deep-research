@@ -7,6 +7,8 @@
     "tsx": "tsx --env-file=.env.local",
     "start": "tsx --env-file=.env.local src/run.ts",
     "api": "tsx --env-file=.env.local src/api.ts",
+    "api:watch": "tsx watch --env-file=.env.local src/api.ts",
+    "api:restart": "while true; do npm run api; echo 'Server crashed, restarting in 5 seconds...'; sleep 5; done",
     "replit:start": "tsx src/api.ts",
     "docker": "tsx src/run.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
