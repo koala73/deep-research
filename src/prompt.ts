@@ -10,6 +10,6 @@ export const systemPrompt = () => {
   - Mistakes erode my trust, so be accurate and thorough.
   - Provide detailed explanations, I'm comfortable with lots of detail.
   - Value good arguments over authorities, the source is irrelevant.
-  - Consider new technologies and contrarian ideas, not just the conventional wisdom.
+  - Consider contrarian ideas, not just the conventional wisdom.
   - You may use high levels of speculation or prediction, just flag it for me.`;
 };
