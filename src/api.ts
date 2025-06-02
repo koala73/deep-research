@@ -35,7 +35,7 @@ app.use((req, res, next) => {
 // API endpoint to run research
 app.post('/api/research', async (req: Request, res: Response) => {
   try {
-    const { query, depth = 3, breadth = 3 } = req.body;
+    const { query, depth = 4, breadth = 4 } = req.body;
 
     if (!query) {
       return res.status(400).json({ error: 'Query is required' });
@@ -92,7 +92,7 @@ interface Job {
 const jobs: Record<string, Job> = {};
 
 app.post('/api/jobs', async (req: Request, res: Response) => {
-  const { query, depth = 3, breadth = 3 } = req.body;
+  const { query, depth = 4, breadth = 4 } = req.body;
 
   if (!query) {
     return res.status(400).json({ error: 'Query is required' });
@@ -127,7 +127,7 @@ app.post('/api/jobs/:id/answers', (req: Request, res: Response) => {
   console.log(`[CONSOLE] Looking for job ${id}`);
   console.log(`[CONSOLE] Available jobs:`, Object.keys(jobs));
   console.log(`[CONSOLE] Job found:`, !!job);
-  
+
   if (!job) {
     console.log(`[CONSOLE] Job ${id} not found in jobs object`);
     return res.status(404).json({ error: 'Job not found' });
@@ -164,10 +164,10 @@ ${job.followUpQuestions
       console.log(`[CONSOLE] Query: ${combinedQuery.substring(0, 200)}...`);
       console.log(`[CONSOLE] Breadth: ${job.breadth}, Depth: ${job.depth}`);
       log(`Starting deep research for job ${id} with combined query`);
-      
+
       console.log(`[CONSOLE] Calling deepResearch...`);
       const startTime = Date.now();
-      
+
       const { learnings, visitedUrls } = await deepResearch({
         query: combinedQuery,
         breadth: job.breadth!,
@@ -189,7 +189,7 @@ ${job.followUpQuestions
 
       console.log(`[CONSOLE] Generating final report for job ${id}...`);
       const reportStartTime = Date.now();
-      
+
       const report = await writeFinalReport({
         prompt: combinedQuery,
         learnings,
@@ -251,7 +251,7 @@ app.get('/api/jobs', (req: Request, res: Response) => {
     query: job.query,
     created: 'unknown' // We don't track creation time currently
   }));
-  
+
   return res.json({ 
     totalJobs: Object.keys(jobs).length,
     jobs: jobList 
@@ -262,10 +262,10 @@ app.get('/api/jobs', (req: Request, res: Response) => {
 app.delete('/api/jobs', (req: Request, res: Response) => {
   const clearedCount = Object.keys(jobs).length;
   Object.keys(jobs).forEach(key => delete jobs[key]);
-  
+
   console.log(`[CONSOLE] Cleared ${clearedCount} jobs from memory`);
   log(`Cleared ${clearedCount} jobs from memory`);
-  
+
   return res.json({ 
     message: `Cleared ${clearedCount} jobs`,
     totalJobs: Object.keys(jobs).length
@@ -323,11 +323,11 @@ process.on('SIGINT', () => {
 app.use((error: any, req: Request, res: Response, next: any) => {
   console.error('[ERROR] Express error handler:', error);
   log(`Express error: ${error.message}`);
-  
+
   if (res.headersSent) {
     return next(error);
   }
-  
+
   res.status(500).json({ 
     error: 'Internal server error',
     message: error.message,
