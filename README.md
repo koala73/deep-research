@@ -72,6 +72,7 @@ flowchart TB
 - **Depth & Breadth Control**: Configurable parameters to control how wide (breadth) and deep (depth) the research goes
 - **Smart Follow-up**: Generates follow-up questions to better understand research needs
 - **Comprehensive Reports**: Produces detailed markdown reports with findings and sources
+- **Persistent Reports**: Completed reports are saved to disk and can be downloaded via `/api/reports/{id}`
 - **Concurrent Processing**: Handles multiple searches and result processing in parallel for efficiency
 
 ## Requirements
@@ -101,6 +102,8 @@ FIRECRAWL_KEY="your_firecrawl_key"
 
 OPENAI_KEY="your_openai_key"
 ACCESS_KEY="choose_a_strong_key"
+# Optional: control how many learnings are processed per report section
+# REPORT_CHUNK_SIZE="20"
 ```
 
 To use local LLM, comment out `OPENAI_KEY` and instead uncomment `OPENAI_ENDPOINT` and `OPENAI_MODEL`:
@@ -215,7 +218,12 @@ Fetch `/api/jobs/{jobId}` until the status changes to `completed`:
 curl http://localhost:3051/api/jobs/<jobId>
 ```
 
-When finished, the response will include the generated Markdown report.
+When finished, the response will include a `reportUrl` field. Fetch this URL to
+download the saved Markdown report:
+
+```bash
+curl http://localhost:3051/api/reports/<jobId> > report.md
+```
 
 ## How It Works
 

@@ -277,7 +277,8 @@ app.get('/api/jobs/:id', (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Job not found' });
   }
 
-  return res.json({ ...job, logs: getJobLogs(req.params.id) });
+  const { report, ...jobData } = job;
+  return res.json({ ...jobData, logs: getJobLogs(req.params.id) });
 });
 
 app.get('/api/jobs/:id/logs', (req: Request, res: Response) => {
