@@ -155,6 +155,13 @@ ${job.followUpQuestions
       job.status = 'error';
       job.error = 'Job timed out after 10 minutes';
       log(`Job ${id} timed out`);
+      
+      // Clean up timed out job after 1 minute
+      setTimeout(() => {
+        delete jobs[id];
+        console.log(`[CONSOLE] Cleaned up timed out job ${id}`);
+        log(`Cleaned up timed out job ${id}`);
+      }, 60 * 1000);
     }
   }, 10 * 60 * 1000); // 10 minutes
 
@@ -204,6 +211,13 @@ ${job.followUpQuestions
       job.report = report;
       console.log(`[CONSOLE] ====== JOB ${id} COMPLETED SUCCESSFULLY ======`);
       log(`Job ${id} completed successfully`);
+      
+      // Clean up completed job after 5 minutes to free memory
+      setTimeout(() => {
+        delete jobs[id];
+        console.log(`[CONSOLE] Cleaned up completed job ${id}`);
+        log(`Cleaned up completed job ${id}`);
+      }, 5 * 60 * 1000);
     } catch (error: any) {
       clearTimeout(jobTimeout);
       job.status = 'error';
@@ -218,6 +232,13 @@ ${job.followUpQuestions
         cause: error?.cause
       });
       log(`Job ${id} error:`, job.error);
+      
+      // Clean up errored job after 2 minutes to free memory
+      setTimeout(() => {
+        delete jobs[id];
+        console.log(`[CONSOLE] Cleaned up errored job ${id}`);
+        log(`Cleaned up errored job ${id}`);
+      }, 2 * 60 * 1000);
     }
   }).catch(error => {
     clearTimeout(jobTimeout);
@@ -225,6 +246,13 @@ ${job.followUpQuestions
     job.status = 'error';
     job.error = `Context error: ${error.message}`;
     log(`Job ${id} context error:`, error.message);
+    
+    // Clean up context-errored job after 1 minute
+    setTimeout(() => {
+      delete jobs[id];
+      console.log(`[CONSOLE] Cleaned up context-errored job ${id}`);
+      log(`Cleaned up context-errored job ${id}`);
+    }, 60 * 1000);
   });
 
   return res.json({ success: true });
