@@ -125,24 +125,31 @@ export async function writeFinalReport({
   learnings: string[];
   visitedUrls: string[];
 }) {
-  const learningsString = learnings
-    .map(learning => `<learning>\n${learning}\n</learning>`)
-    .join('\n');
+  const chunkSize = Number(process.env.REPORT_CHUNK_SIZE) || 20;
+  const sections: string[] = [];
+  for (let i = 0; i < learnings.length; i += chunkSize) {
+    const chunk = learnings.slice(i, i + chunkSize)
+      .map(l => `<learning>\n${l}\n</learning>`)
+      .join('\n');
 
-  const res = await generateObjectWithRetry({
-    model: getModel(),
-    system: systemPrompt(),
-    prompt: trimPrompt(
-      `Given the following prompt from the user, write a final report on the topic using the learnings from research. Make it as as detailed as possible, aim for 3 or more pages, include ALL the learnings from research:\n\n<prompt>${prompt}</prompt>\n\nHere are all the learnings from previous research:\n\n<learnings>\n${learningsString}\n</learnings>`,
-    ),
-    schema: z.object({
-      reportMarkdown: z.string().describe('Final report on the topic in Markdown'),
-    }),
-  });
+    const res = await generateObjectWithRetry({
+      model: getModel(),
+      system: systemPrompt(),
+      prompt: trimPrompt(
+        `You are writing a detailed research report in Markdown. Continue from previous sections if provided.\n\n<prompt>${prompt}</prompt>\n\nHere are some learnings for this section:\n\n<learnings>\n${chunk}\n</learnings>`,
+      ),
+      schema: z.object({
+        reportMarkdown: z.string().describe('Markdown section of the final report'),
+      }),
+    });
 
-  // Append the visited URLs section to the report
+    sections.push(res.object.reportMarkdown);
+  }
+
+  const report = sections.join('\n\n');
+
   const urlsSection = `\n\n## Sources\n\n${visitedUrls.map(url => `- ${url}`).join('\n')}`;
-  return res.object.reportMarkdown + urlsSection;
+  return report + urlsSection;
 }
 
 export async function writeFinalAnswer({
