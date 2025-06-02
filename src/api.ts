@@ -258,6 +258,20 @@ app.get('/api/jobs', (req: Request, res: Response) => {
   });
 });
 
+// Debug endpoint to clear all jobs
+app.delete('/api/jobs', (req: Request, res: Response) => {
+  const clearedCount = Object.keys(jobs).length;
+  Object.keys(jobs).forEach(key => delete jobs[key]);
+  
+  console.log(`[CONSOLE] Cleared ${clearedCount} jobs from memory`);
+  log(`Cleared ${clearedCount} jobs from memory`);
+  
+  return res.json({ 
+    message: `Cleared ${clearedCount} jobs`,
+    totalJobs: Object.keys(jobs).length
+  });
+});
+
 // Health check endpoint for deployment
 app.get('/', (req: Request, res: Response) => {
   return res.status(200).json({ 
