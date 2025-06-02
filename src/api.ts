@@ -220,8 +220,8 @@ ${job.followUpQuestions
 
       clearTimeout(jobTimeout);
       job.status = 'completed';
+      job.report = report;
       job.reportUrl = reportUrl;
-      delete job.report;
       console.log(`[CONSOLE] ====== JOB ${id} COMPLETED SUCCESSFULLY ======`);
       log(`Job ${id} completed successfully`);
       
