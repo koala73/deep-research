@@ -1,5 +1,8 @@
 import cors from 'cors';
 import express, { Request, Response } from 'express';
+import fs from 'fs/promises';
+import { existsSync, mkdirSync } from 'fs';
+import path from 'path';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,6 +18,10 @@ import { log, withJobContext, getJobLogs } from './logger';
 const app = express();
 const port = process.env.PORT || 3051;
 const accessKey = process.env.ACCESS_KEY;
+const reportsDir = path.join(process.cwd(), 'reports');
+if (!existsSync(reportsDir)) {
+  mkdirSync(reportsDir, { recursive: true });
+}
 
 // Middleware
 app.use(cors());
@@ -81,6 +88,7 @@ interface Job {
   status: JobStatus;
   progress?: ResearchProgress;
   report?: string;
+  reportUrl?: string;
   error?: string;
   followUpQuestions?: string[];
   query?: string;
@@ -203,12 +211,17 @@ ${job.followUpQuestions
         visitedUrls,
       });
 
+      const reportPath = path.join(reportsDir, `${id}.md`);
+      await fs.writeFile(reportPath, report, 'utf-8');
+      const reportUrl = `/api/reports/${id}`;
+
       const reportTime = Date.now() - reportStartTime;
       console.log(`[CONSOLE] Report generated for job ${id} in ${reportTime}ms`);
 
       clearTimeout(jobTimeout);
       job.status = 'completed';
       job.report = report;
+      job.reportUrl = reportUrl;
       console.log(`[CONSOLE] ====== JOB ${id} COMPLETED SUCCESSFULLY ======`);
       log(`Job ${id} completed successfully`);
       
@@ -269,6 +282,14 @@ app.get('/api/jobs/:id', (req: Request, res: Response) => {
 
 app.get('/api/jobs/:id/logs', (req: Request, res: Response) => {
   return res.json({ logs: getJobLogs(req.params.id) });
+});
+
+app.get('/api/reports/:id', (req: Request, res: Response) => {
+  const file = path.join(reportsDir, `${req.params.id}.md`);
+  if (!existsSync(file)) {
+    return res.status(404).json({ error: 'Report not found' });
+  }
+  return res.sendFile(file);
 });
 
 // Debug endpoint to list all jobs
