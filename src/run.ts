@@ -27,7 +27,7 @@ function askQuestion(query: string): Promise<string> {
 // run the agent
 async function run() {
   const mode = process.argv[2];
-  
+
   if (mode === 'api') {
     // Import and start the API server
     const { default: app } = await import('./api');
@@ -50,9 +50,9 @@ async function run() {
     ) || 4;
   const depth =
     parseInt(
-      await askQuestion('Enter research depth (recommended 1-5, default 2): '),
+      await askQuestion('Enter research depth (recommended 1-5, default 6): '),
       10,
-    ) || 2;
+    ) || 6;
   const isReport =
     (await askQuestion(
       'Do you want to generate a long report or a specific answer? (report/answer, default report): ',
