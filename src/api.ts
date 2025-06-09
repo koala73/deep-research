@@ -28,6 +28,11 @@ app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
+  // Skip auth for health endpoints
+  if (req.path === '/keepalive' || req.path === '/') {
+    return next();
+  }
+  
   if (!accessKey) {
     return next();
   }
