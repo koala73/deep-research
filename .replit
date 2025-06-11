@@ -43,6 +43,6 @@ pageEnabled = true
 buttonEnabled = false
 
 [[ports]]
-localPort = 5000
+localPort = 3051
 externalPort = 80
 
