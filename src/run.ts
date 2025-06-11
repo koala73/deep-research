@@ -1,14 +1,14 @@
 import * as fs from 'fs/promises';
 import * as readline from 'readline';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 
 import { getModel } from './ai/providers';
 import {
   deepResearch,
+  generateReportTitle,
   writeFinalAnswer,
   writeFinalReport,
 } from './deep-research';
+import { generatePDF } from './pdf-generator';
 import { generateFeedback } from './feedback';
 import { log } from './logger';
 
@@ -16,8 +16,6 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
-
-const execFileAsync = promisify(execFile);
 
 // Helper function to get user input
 function askQuestion(query: string): Promise<string> {
@@ -57,10 +55,11 @@ async function run() {
       await askQuestion('Enter research depth (recommended 1-5, default 6): '),
       10,
     ) || 6;
-  const isReport =
-    (await askQuestion(
-      'Do you want to generate a long report or a specific answer? (report/answer, default report): ',
-    )) !== 'answer';
+  const outputType = await askQuestion(
+    'Output format - report (long), answer (concise), or pdf (report as PDF)? (report/answer/pdf, default pdf): ',
+  );
+  const isReport = outputType !== 'answer';
+  const isPDF = outputType === 'pdf' || outputType === '';
 
   let combinedQuery = initialQuery;
   if (isReport) {
@@ -111,19 +110,18 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
 
     await fs.writeFile('report.md', report, 'utf-8');
     log(`\n\nFinal Report:\n\n${report}`);
-    log('\nReport has been saved to report.md');
-
-    // Also generate a PDF using the Python helper
-    try {
-      await execFileAsync('python3', [
-        '-m',
-        'utils.pdf_utils',
-        'report.md',
-        'report.pdf',
-      ]);
-      log('Report PDF has been saved to report.pdf');
-    } catch {
-      log('Failed to generate report.pdf');
+    
+    if (isPDF) {
+      log('\nGenerating PDF...');
+      const reportTitle = await generateReportTitle({
+        prompt: combinedQuery,
+        learnings,
+      });
+      
+      await generatePDF(report, 'report.pdf', { title: reportTitle });
+      log('\nReport has been saved to report.pdf');
+    } else {
+      log('\nReport has been saved to report.md');
     }
   } else {
     const answer = await writeFinalAnswer({
@@ -134,19 +132,6 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
     await fs.writeFile('answer.md', answer, 'utf-8');
     log(`\n\nFinal Answer:\n\n${answer}`);
     log('\nAnswer has been saved to answer.md');
-
-    // Also generate a PDF using the Python helper
-    try {
-      await execFileAsync('python3', [
-        '-m',
-        'utils.pdf_utils',
-        'answer.md',
-        'answer.pdf',
-      ]);
-      log('Answer PDF has been saved to answer.pdf');
-    } catch {
-      log('Failed to generate answer.pdf');
-    }
   }
 
   if (process.argv[2] !== 'api') {

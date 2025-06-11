@@ -116,6 +116,28 @@ async function processSerpResult({
   return res.object;
 }
 
+export async function generateReportTitle({
+  prompt,
+  learnings,
+}: {
+  prompt: string;
+  learnings: string[];
+}): Promise<string> {
+  const model = getModel();
+  const { text } = await generateText({
+    model,
+    prompt: `Based on the following research query and key learnings, generate a concise, descriptive title for the research report (max 10 words):
+
+Query: ${prompt}
+
+Key Learnings:
+${learnings.slice(0, 3).join('\n')}
+
+Generate only the title, nothing else.`,
+  });
+  return text.trim();
+}
+
 export async function writeFinalReport({
   prompt,
   learnings,

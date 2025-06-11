@@ -8,10 +8,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 import {
   deepResearch,
+  generateReportTitle,
   writeFinalAnswer,
   writeFinalReport,
   ResearchProgress,
 } from './deep-research';
+import { generatePDF } from './pdf-generator';
 import { generateFeedback } from './feedback';
 import { log, withJobContext, getJobLogs } from './logger';
 
@@ -94,18 +96,20 @@ interface Job {
   progress?: ResearchProgress;
   report?: string;
   reportUrl?: string;
+  reportPdf?: Buffer;
   error?: string;
   followUpQuestions?: string[];
   query?: string;
   breadth?: number;
   depth?: number;
   logs?: string[];
+  outputFormat?: 'markdown' | 'pdf';
 }
 
 const jobs: Record<string, Job> = {};
 
 app.post('/api/jobs', async (req: Request, res: Response) => {
-  const { query, depth = 4, breadth = 4 } = req.body;
+  const { query, depth = 4, breadth = 4, outputFormat = 'markdown' } = req.body;
 
   if (!query) {
     return res.status(400).json({ error: 'Query is required' });
@@ -121,6 +125,7 @@ app.post('/api/jobs', async (req: Request, res: Response) => {
     breadth,
     depth,
     logs: [],
+    outputFormat,
   };
 
   console.log(`[CONSOLE] Created job ${jobId}, total jobs in memory: ${Object.keys(jobs).length}`);
@@ -223,10 +228,23 @@ ${job.followUpQuestions
       const reportTime = Date.now() - reportStartTime;
       console.log(`[CONSOLE] Report generated for job ${id} in ${reportTime}ms`);
 
-      clearTimeout(jobTimeout);
-      job.status = 'completed';
       job.report = report;
       job.reportUrl = reportUrl;
+
+      if (job.outputFormat === 'pdf') {
+        const reportTitle = await generateReportTitle({
+          prompt: combinedQuery,
+          learnings,
+        });
+        
+        const pdfPath = `/tmp/report-${id}.pdf`;
+        await generatePDF(report, pdfPath, { title: reportTitle });
+        job.reportPdf = await fs.readFile(pdfPath);
+        await fs.unlink(pdfPath).catch(() => {});
+      }
+
+      clearTimeout(jobTimeout);
+      job.status = 'completed';
       console.log(`[CONSOLE] ====== JOB ${id} COMPLETED SUCCESSFULLY ======`);
       log(`Job ${id} completed successfully`);
       
@@ -282,7 +300,7 @@ app.get('/api/jobs/:id', (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Job not found' });
   }
 
-  const { report, ...jobData } = job;
+  const { report, reportPdf, ...jobData } = job;
   return res.json({ ...jobData, logs: getJobLogs(req.params.id) });
 });
 
@@ -325,6 +343,22 @@ app.delete('/api/jobs', (req: Request, res: Response) => {
     message: `Cleared ${clearedCount} jobs`,
     totalJobs: Object.keys(jobs).length
   });
+});
+
+// Endpoint to download PDF report
+app.get('/api/jobs/:id/pdf', (req: Request, res: Response) => {
+  const job = jobs[req.params.id];
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+
+  if (job.status !== 'completed' || !job.reportPdf) {
+    return res.status(400).json({ error: 'PDF not available' });
+  }
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="research-report-${req.params.id}.pdf"`);
+  return res.send(job.reportPdf);
 });
 
 // Health check endpoint for deployment

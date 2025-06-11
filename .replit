@@ -6,6 +6,11 @@ hidden = [".config", "package-lock.json"]
 [nix]
 channel = "stable-23_11"
 
+[deps]
+# Puppeteer/Chromium dependencies for PDF generation
+chromium = "stable"
+chromium-sandbox = "stable"
+
 [deployment]
 run = ["sh", "-c", "npm start api"]
 deploymentTarget = "cloudrun"
