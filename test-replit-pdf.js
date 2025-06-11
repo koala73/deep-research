@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-const { generatePDF } = require('./dist/pdf-generator');
+// Use tsx to run TypeScript directly
+const { execSync } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -90,26 +91,83 @@ async function test() {
   }
 }
 
-// Ensure dist directory exists
-async function ensureDist() {
-  try {
-    await fs.mkdir(path.join(__dirname, 'dist'), { recursive: true });
-  } catch (e) {
-    // Directory might already exist
-  }
+// Create a TypeScript test file and run it with tsx
+async function runTest() {
+  // Create TypeScript test file
+  const tsTestFile = path.join(__dirname, 'test-replit-pdf.ts');
   
-  // Compile TypeScript if needed
-  console.log('Compiling TypeScript...');
+  const tsContent = `
+import { generatePDF } from './src/pdf-generator';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
+const testMarkdown = \`${testMarkdown.replace(/`/g, '\\`')}\`;
+
+async function test() {
+  console.log('=== Replit PDF Generation Test ===\\n');
+  
+  // Check environment
+  console.log('Environment Check:');
+  console.log('- REPL_ID:', process.env.REPL_ID || 'Not set');
+  console.log('- REPLIT:', process.env.REPLIT || 'Not set');
+  console.log('- Platform:', process.platform);
+  console.log('- Node:', process.version);
+  
+  // Check for Chromium
+  console.log('\\nChromium Check:');
   try {
     const { execSync } = require('child_process');
-    execSync('npm run build', { stdio: 'inherit' });
+    const chromiumPath = execSync('which chromium', { encoding: 'utf8' }).trim();
+    console.log('- Chromium found at:', chromiumPath);
+    
+    const chromiumVersion = execSync('chromium --version', { encoding: 'utf8' }).trim();
+    console.log('- Version:', chromiumVersion);
   } catch (e) {
-    console.log('Build failed, trying to run test anyway...');
+    console.log('- Chromium not found in PATH');
+  }
+  
+  // Test PDF generation
+  console.log('\\nGenerating test PDF...');
+  const outputPath = path.join(__dirname, 'test-output.pdf');
+  
+  try {
+    await generatePDF(testMarkdown, outputPath, {
+      title: 'Replit Chromium Test Report'
+    });
+    
+    // Check if file was created
+    const stats = await fs.stat(outputPath);
+    console.log(\`\\n✅ Success! PDF generated: \${outputPath}\`);
+    console.log(\`   File size: \${stats.size} bytes\`);
+    console.log('\\nYou can now download and view the PDF to verify it rendered correctly.');
+    
+  } catch (error: any) {
+    console.error('\\n❌ Error generating PDF:', error.message);
+    console.error('\\nFull error:', error);
+    
+    // Provide troubleshooting tips
+    console.log('\\nTroubleshooting:');
+    console.log('1. Ensure Chromium is in your .replit file: packages = ["chromium"]');
+    console.log('2. Try running: nix-channel --update && replit-nix');
+    console.log('3. Restart your Repl after adding Chromium');
   }
 }
 
+test().catch(console.error);
+`;
+
+  await fs.writeFile(tsTestFile, tsContent);
+  
+  console.log('Running test with tsx...\n');
+  try {
+    execSync('npm run tsx test-replit-pdf.ts', { stdio: 'inherit' });
+  } catch (e) {
+    // Error already displayed
+  }
+  
+  // Clean up
+  await fs.unlink(tsTestFile).catch(() => {});
+}
+
 // Main execution
-(async () => {
-  await ensureDist();
-  await test();
-})().catch(console.error);
+runTest().catch(console.error);
