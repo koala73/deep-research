@@ -663,12 +663,17 @@ export async function generatePDF(
       const isReplit = process.env.REPL_ID || process.env.REPLIT;
       let executablePath = chromePath;
       
-      if (isReplit && !chromePath) {
-        // In Replit, try to use system chromium if available
-        const systemChromium = '/nix/store/chromium/bin/chromium';
-        if (fs.existsSync(systemChromium)) {
-          executablePath = systemChromium;
-          console.log('Using Replit system Chromium');
+      if (isReplit) {
+        // In Replit, chromium should be available in PATH when installed via nix
+        try {
+          const { execSync } = require('child_process');
+          const replitChromium = execSync('which chromium', { encoding: 'utf8' }).trim();
+          if (replitChromium) {
+            executablePath = replitChromium;
+            console.log('Using Replit system Chromium from PATH:', executablePath);
+          }
+        } catch (e) {
+          console.log('Chromium not found in PATH, using detected path');
         }
       }
       
