@@ -3,10 +3,21 @@ import * as path from 'path';
 
 let marked: any;
 let puppeteer: any;
+let chromium: any;
 
 try {
   marked = require('marked').marked;
-  puppeteer = require('puppeteer');
+  
+  // Try to use puppeteer-core with @sparticuz/chromium first (for serverless/Replit)
+  try {
+    puppeteer = require('puppeteer-core');
+    chromium = require('@sparticuz/chromium');
+    console.log('Using puppeteer-core with @sparticuz/chromium');
+  } catch (e) {
+    // Fall back to regular puppeteer
+    puppeteer = require('puppeteer');
+    console.log('Using standard puppeteer');
+  }
 } catch (error) {
   console.error('PDF dependencies not installed. Run: npm install marked puppeteer');
   // Provide stub functions to prevent crashes
@@ -573,47 +584,62 @@ export async function generatePDF(
 
   let browser;
   try {
-    // Find Chrome executable
-    const chromePath = await findChrome();
+    let launchOptions: any;
     
-    // Check if we're in Replit and system chromium is available
-    const isReplit = process.env.REPL_ID || process.env.REPLIT;
-    let executablePath = chromePath;
-    
-    if (isReplit && !chromePath) {
-      // In Replit, try to use system chromium if available
-      const systemChromium = '/nix/store/chromium/bin/chromium';
-      if (fs.existsSync(systemChromium)) {
-        executablePath = systemChromium;
-        console.log('Using Replit system Chromium');
+    // Check if we're using @sparticuz/chromium
+    if (chromium) {
+      // Use @sparticuz/chromium configuration
+      const executablePath = await chromium.executablePath();
+      launchOptions = {
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: executablePath,
+        headless: chromium.headless,
+      };
+      console.log('Launching with @sparticuz/chromium');
+    } else {
+      // Fall back to standard Chrome detection
+      const chromePath = await findChrome();
+      
+      // Check if we're in Replit and system chromium is available
+      const isReplit = process.env.REPL_ID || process.env.REPLIT;
+      let executablePath = chromePath;
+      
+      if (isReplit && !chromePath) {
+        // In Replit, try to use system chromium if available
+        const systemChromium = '/nix/store/chromium/bin/chromium';
+        if (fs.existsSync(systemChromium)) {
+          executablePath = systemChromium;
+          console.log('Using Replit system Chromium');
+        }
       }
-    }
-    
-    if (!executablePath) {
-      console.error('Chrome not found in standard locations. Attempting to use Puppeteer default...');
-    }
-    
-    // Launch Puppeteer with Replit-compatible settings
-    const launchOptions: any = {
-      headless: 'new',
-      args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-gpu',
-      ],
-    };
-    
-    // Only add executablePath if we found one
-    if (executablePath) {
-      launchOptions.executablePath = executablePath;
-    }
-    
-    // For Replit, add additional args
-    if (isReplit) {
-      launchOptions.args.push('--single-process', '--no-zygote');
+      
+      if (!executablePath) {
+        console.error('Chrome not found in standard locations. Attempting to use Puppeteer default...');
+      }
+      
+      // Standard Puppeteer launch options
+      launchOptions = {
+        headless: 'new',
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-gpu',
+        ],
+      };
+      
+      // Only add executablePath if we found one
+      if (executablePath) {
+        launchOptions.executablePath = executablePath;
+      }
+      
+      // For Replit, add additional args
+      if (isReplit) {
+        launchOptions.args.push('--single-process', '--no-zygote');
+      }
     }
     
     browser = await puppeteer.launch(launchOptions);
