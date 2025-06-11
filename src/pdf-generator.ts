@@ -48,6 +48,18 @@ const emojiReplacements: Record<string, string> = {
   '⚠️': 'Warning',
   '💬': 'Comment',
   '📝': 'Note',
+  '👍': '+',
+  '👎': '-',
+  '⭐': '*',
+  '🔴': '[RED]',
+  '🟢': '[GREEN]',
+  '🔵': '[BLUE]',
+  '⚪': '[WHITE]',
+  '⚫': '[BLACK]',
+  '🟡': '[YELLOW]',
+  '🟠': '[ORANGE]',
+  '🟣': '[PURPLE]',
+  '🟤': '[BROWN]',
 };
 
 const specialCharReplacements: Record<string, string> = {
@@ -76,6 +88,76 @@ const specialCharReplacements: Record<string, string> = {
   δ: 'delta',
   π: 'pi',
   Ω: 'omega',
+  // Common quotation marks and dashes
+  '"': '"',
+  '"': '"',
+  ''': "'",
+  ''': "'",
+  '–': '-',
+  '—': '--',
+  '…': '...',
+  '•': '*',
+  '‣': '>',
+  '․': '.',
+  '‥': '..',
+  '⁃': '-',
+  '※': '*',
+  '‼': '!!',
+  '⁇': '?!',
+  '⁈': '?!',
+  '⁉': '!?',
+  // Arrows
+  '←': '<-',
+  '→': '->',
+  '↑': '^',
+  '↓': 'v',
+  '↔': '<->',
+  '⇐': '<=',
+  '⇒': '=>',
+  '⇑': '^^',
+  '⇓': 'vv',
+  '⇔': '<=>',
+  // Fractions
+  '¼': '1/4',
+  '½': '1/2',
+  '¾': '3/4',
+  '⅓': '1/3',
+  '⅔': '2/3',
+  '⅕': '1/5',
+  '⅖': '2/5',
+  '⅗': '3/5',
+  '⅘': '4/5',
+  '⅙': '1/6',
+  '⅚': '5/6',
+  '⅛': '1/8',
+  '⅜': '3/8',
+  '⅝': '5/8',
+  '⅞': '7/8',
+  // Other symbols
+  '§': 'S',
+  '¶': 'P',
+  '†': '+',
+  '‡': '++',
+  '¤': 'o',
+  '¦': '|',
+  '¨': '"',
+  '¬': '-',
+  '¯': '-',
+  '´': "'",
+  '¸': ',',
+  'ˆ': '^',
+  '˜': '~',
+  '‰': 'o/oo',
+  '′': "'",
+  '″': '"',
+  '‴': "'''",
+  '‵': '`',
+  '‶': '``',
+  '‷': '```',
+  '‹': '<',
+  '›': '>',
+  '«': '<<',
+  '»': '>>',
 };
 
 function sanitizeText(text: string): string {
@@ -90,11 +172,43 @@ function sanitizeText(text: string): string {
     sanitized = sanitized.replace(new RegExp(char, 'g'), replacement);
   }
 
+  // Handle specific problematic characters
+  // \x95 is a bullet point in Windows-1252 encoding
+  sanitized = sanitized.replace(/\x95/g, '*');
+  sanitized = sanitized.replace(/[\x80-\x94]/g, ''); // Remove other Windows-1252 control characters
+  sanitized = sanitized.replace(/[\x96-\x9F]/g, ''); // Remove more Windows-1252 control characters
+  
+  // Replace various bullet points and similar characters
+  sanitized = sanitized.replace(/[•·▪▫◦‣⁌⁍]/g, '*');
+  
+  // Replace various dash characters
+  sanitized = sanitized.replace(/[‐‑‒–—―]/g, '-');
+  
+  // Replace various quotation marks
+  sanitized = sanitized.replace(/[''‚‛]/g, "'");
+  sanitized = sanitized.replace(/[""„‟]/g, '"');
+  
+  // Remove zero-width characters
+  sanitized = sanitized.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  
   // Remove high Unicode characters (surrogate pairs)
   sanitized = sanitized.replace(/[\ud800-\udfff]/g, '');
+  
+  // Remove any remaining non-ASCII characters that might cause issues
+  // This is more aggressive but ensures compatibility
+  sanitized = sanitized.replace(/[^\x00-\x7F]/g, (char) => {
+    // Try to find a replacement first
+    const code = char.charCodeAt(0);
+    if (code >= 0x00A0 && code <= 0x00FF) {
+      // Latin-1 Supplement - these are usually safe
+      return char;
+    }
+    // For everything else, replace with a space or remove
+    return ' ';
+  });
 
-  // Ensure UTF-8 encoding
-  sanitized = Buffer.from(sanitized, 'utf-8').toString('utf-8');
+  // Clean up multiple spaces
+  sanitized = sanitized.replace(/\s+/g, ' ');
 
   return sanitized;
 }
@@ -109,8 +223,13 @@ function generateCSS(config: PDFConfig): string {
       box-sizing: border-box;
     }
     
+    @font-face {
+      font-family: 'fallback';
+      src: local('Arial'), local('Helvetica'), local('sans-serif');
+    }
+    
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', Arial, Helvetica, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
       font-size: ${config.itemFontSize}pt;
       line-height: 1.6;
       color: #2d3748;
