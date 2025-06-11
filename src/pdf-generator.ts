@@ -586,8 +586,24 @@ export async function generatePDF(
   try {
     let launchOptions: any;
     
-    // Check if we're using @sparticuz/chromium
-    if (chromium) {
+    // First, check if we have a chrome-config.json file (for Replit)
+    try {
+      const configPath = path.join(process.cwd(), 'chrome-config.json');
+      if (await fs.access(configPath).then(() => true).catch(() => false)) {
+        const config = JSON.parse(await fs.readFile(configPath, 'utf-8'));
+        launchOptions = {
+          executablePath: config.executablePath,
+          headless: true,
+          args: config.args || [],
+        };
+        console.log('Using chrome-config.json configuration');
+      }
+    } catch (e) {
+      // Config file not found or invalid
+    }
+    
+    // If no config file, check if we're using @sparticuz/chromium
+    if (!launchOptions && chromium) {
       // Use @sparticuz/chromium configuration
       const executablePath = await chromium.executablePath();
       launchOptions = {
@@ -597,7 +613,7 @@ export async function generatePDF(
         headless: chromium.headless,
       };
       console.log('Launching with @sparticuz/chromium');
-    } else {
+    } else if (!launchOptions) {
       // Fall back to standard Chrome detection
       const chromePath = await findChrome();
       

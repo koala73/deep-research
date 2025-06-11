@@ -45,3 +45,6 @@ yarn-error.log*
 bun.lockb
 report.md
 __pycache__/
+
+# Chrome configuration (environment-specific)
+chrome-config.json
