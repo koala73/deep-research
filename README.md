@@ -132,10 +132,22 @@ docker exec -it deep-research npm run docker
 
 ## Usage
 
-Run the research assistant:
+### API Server (Default)
+
+Start the API server:
 
 ```bash
 npm start
+```
+
+The server will run on port 3051. See the [Web API](#web-api) section below for endpoints.
+
+### CLI Mode
+
+For interactive command-line research:
+
+```bash
+npm run cli
 ```
 
 You'll be prompted to:
@@ -183,7 +195,7 @@ CUSTOM_MODEL="custom_model"
 
 ### Web API
 
-Run `npm run api` to start the API server on port `3051` (or the value of the `PORT` environment variable).
+The API server starts automatically with `npm start` on port `3051` (or the value of the `PORT` environment variable).
 
 All requests must include an `Authorization` header containing the value of your
 `ACCESS_KEY`.

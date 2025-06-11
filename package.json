@@ -5,7 +5,8 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "tsx": "tsx",
-    "start": "tsx src/run.ts",
+    "start": "tsx src/api.ts",
+    "cli": "tsx src/run.ts",
     "api": "tsx src/api.ts",
     "api:watch": "tsx watch src/api.ts",
     "api:restart": "while true; do npm run api; echo 'Server crashed, restarting in 5 seconds...'; sleep 5; done",

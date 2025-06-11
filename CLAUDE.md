@@ -5,9 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Development Commands
 
 ### Running the Application
-- **CLI Mode**: `npm start` - Interactive command-line research interface
+- **API Server**: `npm start` - REST API server on port 3051 (default)
+- **CLI Mode**: `npm run cli` - Interactive command-line research interface
   - Choose output format: `report` (Markdown), `answer` (concise), or `pdf` (full report as PDF)
-- **API Server**: `npm run api` - REST API server on port 3051
 - **Docker**: `npm run docker` - Run in Docker container
 
 ### Code Quality

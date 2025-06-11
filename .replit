@@ -1,14 +1,14 @@
 modules = ["nodejs-20", "bash", "python-3.12"]
 
 hidden = [".config", "package-lock.json"]
-run = "npm run start"
+run = "npm start"
 
 [nix]
 channel = "stable-24_05"
 packages = ["chromium"]
 
 [deployment]
-run = ["sh", "-c", "npm run start"]
+run = ["sh", "-c", "npm start"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
 
