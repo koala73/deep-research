@@ -631,7 +631,35 @@ export async function generatePDF(
       // Config file not found or invalid - this is fine, we'll use defaults
     }
     
-    // If no config file, check if we're using @sparticuz/chromium
+    // Check if we're in Replit first - prioritize system chromium
+    const isReplit = process.env.REPL_ID || process.env.REPLIT;
+    
+    if (!launchOptions && isReplit) {
+      // In Replit, try system chromium first
+      try {
+        const { execSync } = require('child_process');
+        const replitChromium = execSync('which chromium', { encoding: 'utf8' }).trim();
+        if (replitChromium) {
+          launchOptions = {
+            executablePath: replitChromium,
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-gpu',
+              '--single-process',
+              '--no-zygote'
+            ],
+          };
+          console.log('Using Replit system Chromium from PATH:', replitChromium);
+        }
+      } catch (e) {
+        console.log('Chromium not found in PATH');
+      }
+    }
+    
+    // If no config file and not Replit (or Replit chromium not found), check if we're using @sparticuz/chromium
     if (!launchOptions && chromium) {
       // Use @sparticuz/chromium configuration
       const executablePath = await chromium.executablePath();
@@ -659,23 +687,7 @@ export async function generatePDF(
       // Fall back to standard Chrome detection
       const chromePath = await findChrome();
       
-      // Check if we're in Replit and system chromium is available
-      const isReplit = process.env.REPL_ID || process.env.REPLIT;
       let executablePath = chromePath;
-      
-      if (isReplit) {
-        // In Replit, chromium should be available in PATH when installed via nix
-        try {
-          const { execSync } = require('child_process');
-          const replitChromium = execSync('which chromium', { encoding: 'utf8' }).trim();
-          if (replitChromium) {
-            executablePath = replitChromium;
-            console.log('Using Replit system Chromium from PATH:', executablePath);
-          }
-        } catch (e) {
-          console.log('Chromium not found in PATH, using detected path');
-        }
-      }
       
       if (!executablePath) {
         console.error('Chrome not found in standard locations. Attempting to use Puppeteer default...');
@@ -699,10 +711,6 @@ export async function generatePDF(
         launchOptions.executablePath = executablePath;
       }
       
-      // For Replit, add additional args
-      if (isReplit) {
-        launchOptions.args.push('--single-process', '--no-zygote');
-      }
     }
     
     // Only launch if we haven't already launched with Playwright
