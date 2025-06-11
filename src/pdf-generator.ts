@@ -1,7 +1,22 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { marked } from 'marked';
-import puppeteer from 'puppeteer';
+
+let marked: any;
+let puppeteer: any;
+
+try {
+  marked = require('marked').marked;
+  puppeteer = require('puppeteer');
+} catch (error) {
+  console.error('PDF dependencies not installed. Run: npm install marked puppeteer');
+  // Provide stub functions to prevent crashes
+  marked = (text: string) => text;
+  puppeteer = {
+    launch: async () => {
+      throw new Error('Puppeteer not installed. Please run: npm install puppeteer');
+    }
+  };
+}
 
 export interface PDFConfig {
   pageWidth: number;
