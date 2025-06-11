@@ -39,13 +39,12 @@ language = "nodejs"
 language = "nodejs"
 
 [auth]
-pageEnabled = true
+pageEnabled = false
 buttonEnabled = false
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-exposeLocalhost = true
 
 [workflows]
 runButton = "API Server"
