@@ -38,7 +38,7 @@ language = "nodejs"
 language = "nodejs"
 
 [auth]
-pageEnabled = true
+pageEnabled = false
 buttonEnabled = false
 
 [[ports]]
