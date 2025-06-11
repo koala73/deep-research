@@ -28,8 +28,19 @@ async function findChrome(): Promise<string | undefined> {
     '/usr/bin/chromium-browser',
     '/usr/bin/google-chrome',
     '/usr/bin/google-chrome-stable',
-    '/nix/store/chromium/bin/chromium',
   ].filter(Boolean);
+  
+  // In Replit/Nix environment, search for chromium in nix store
+  if (process.env.REPL_ID || process.env.REPLIT) {
+    try {
+      const glob = require('glob');
+      const nixChromiums = glob.sync('/nix/store/*/bin/chromium');
+      possiblePaths.push(...nixChromiums);
+    } catch (e) {
+      // If glob not available, try known paths
+      possiblePaths.push('/nix/store/chromium/bin/chromium');
+    }
+  }
 
   // Check standard paths first
   for (const path of possiblePaths) {
