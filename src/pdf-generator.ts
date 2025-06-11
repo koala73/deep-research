@@ -603,12 +603,29 @@ export async function generatePDF(
       const configPath = path.join(process.cwd(), 'chrome-config.json');
       if (await fs.access(configPath).then(() => true).catch(() => false)) {
         const config = JSON.parse(await fs.readFile(configPath, 'utf-8'));
-        launchOptions = {
-          executablePath: config.executablePath,
-          headless: true,
-          args: config.args || [],
-        };
-        console.log('Using chrome-config.json configuration');
+        
+        // Check if we should use Playwright instead
+        if (config.usePlaywright) {
+          try {
+            const PlaywrightWrapper = require(path.join(process.cwd(), 'playwright-wrapper.js'));
+            browser = await PlaywrightWrapper.launch({
+              headless: true,
+              args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+            console.log('Using Playwright for PDF generation');
+            // Skip the rest of the launch logic
+            launchOptions = null;
+          } catch (e) {
+            console.error('Playwright wrapper not found:', e.message);
+          }
+        } else {
+          launchOptions = {
+            executablePath: config.executablePath,
+            headless: true,
+            args: config.args || [],
+          };
+          console.log('Using chrome-config.json configuration');
+        }
       }
     } catch (e) {
       // Config file not found or invalid - this is fine, we'll use defaults
@@ -683,7 +700,10 @@ export async function generatePDF(
       }
     }
     
-    browser = await puppeteer.launch(launchOptions);
+    // Only launch if we haven't already launched with Playwright
+    if (!browser && launchOptions) {
+      browser = await puppeteer.launch(launchOptions);
+    }
   } catch (launchError: any) {
     console.error('Failed to launch browser:', launchError.message);
     throw new Error(`PDF generation failed: Chrome/Chromium not found. ${launchError.message}`);
