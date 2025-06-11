@@ -392,6 +392,47 @@ app.get('/api/jobs/:id/pdf', (req: Request, res: Response) => {
 
 // Health check endpoint for deployment
 app.get('/', (req: Request, res: Response) => {
+  // Check if request accepts HTML (browser request)
+  if (req.accepts('html')) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Deep Research API</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+            .endpoint { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+            code { background: #e8e8e8; padding: 2px 5px; border-radius: 3px; }
+          </style>
+        </head>
+        <body>
+          <h1>Deep Research API</h1>
+          <p>API is running successfully!</p>
+          <p><strong>Status:</strong> Healthy</p>
+          <p><strong>Service:</strong> deep-research-api</p>
+          <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+          
+          <h2>Available Endpoints:</h2>
+          <div class="endpoint">
+            <strong>POST /api/jobs</strong> - Start a new research job
+          </div>
+          <div class="endpoint">
+            <strong>GET /api/jobs/:id</strong> - Get job status
+          </div>
+          <div class="endpoint">
+            <strong>GET /api/jobs/:id/pdf</strong> - Download PDF report
+          </div>
+          <div class="endpoint">
+            <strong>GET /keepalive</strong> - Health check endpoint
+          </div>
+          
+          <p><em>Note: API endpoints require authentication via the Authorization header.</em></p>
+        </body>
+      </html>
+    `);
+  }
+  
+  // JSON response for API calls
   return res.status(200).json({
     status: 'healthy',
     service: 'deep-research-api',
