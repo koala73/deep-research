@@ -42,12 +42,8 @@ pageEnabled = false
 buttonEnabled = false
 
 [[ports]]
-localPort = 3051
-externalPort = 80
-
-[[ports]]
 localPort = 5000
-externalPort = 5000
+externalPort = 80
 
 [workflows]
 runButton = "API Server"
