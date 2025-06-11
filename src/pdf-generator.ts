@@ -39,22 +39,54 @@ async function findChrome(): Promise<string | undefined> {
   }
   
   // Check Puppeteer cache directory dynamically
-  try {
-    const puppeteerCachePath = process.env.PUPPETEER_CACHE_DIR || '/home/runner/.cache/puppeteer/chrome';
-    if (fs.existsSync(puppeteerCachePath)) {
-      const chromeVersions = fs.readdirSync(puppeteerCachePath).filter((dir: string) => dir.startsWith('linux-'));
-      if (chromeVersions.length > 0) {
-        // Use the most recent version
-        const latestVersion = chromeVersions.sort().reverse()[0];
-        const chromePath = `${puppeteerCachePath}/${latestVersion}/chrome-linux64/chrome`;
-        if (fs.existsSync(chromePath)) {
-          console.log(`Found Chrome at: ${chromePath}`);
-          return chromePath;
+  const cachePaths = [
+    process.env.PUPPETEER_CACHE_DIR,
+    path.join(process.env.HOME || '', '.cache', 'puppeteer'),
+    '/home/runner/.cache/puppeteer',
+    '/home/runner/workspace/.cache/puppeteer',
+    './.cache/puppeteer',
+    path.join(process.cwd(), '.cache', 'puppeteer'),
+    path.join(process.cwd(), 'node_modules', 'puppeteer', '.local-chromium'),
+  ].filter(Boolean);
+
+  for (const baseCachePath of cachePaths) {
+    try {
+      // Check both /chrome and root directory structures
+      const chromeDirs = [
+        baseCachePath,
+        path.join(baseCachePath, 'chrome')
+      ];
+      
+      for (const cachePath of chromeDirs) {
+        if (fs.existsSync(cachePath)) {
+          const entries = fs.readdirSync(cachePath);
+          // Look for linux-* or chrome-* directories
+          const chromeVersions = entries.filter((dir: string) => 
+            dir.startsWith('linux-') || dir.startsWith('chrome-') || dir.includes('137.0')
+          );
+          
+          if (chromeVersions.length > 0) {
+            // Try different possible Chrome binary locations
+            for (const version of chromeVersions.sort().reverse()) {
+              const possiblePaths = [
+                path.join(cachePath, version, 'chrome-linux64', 'chrome'),
+                path.join(cachePath, version, 'chrome-linux', 'chrome'),
+                path.join(cachePath, version, 'chrome'),
+              ];
+              
+              for (const chromePath of possiblePaths) {
+                if (fs.existsSync(chromePath)) {
+                  console.log(`Found Chrome at: ${chromePath}`);
+                  return chromePath;
+                }
+              }
+            }
+          }
         }
       }
+    } catch (error) {
+      console.warn(`Could not check cache path ${baseCachePath}:`, error);
     }
-  } catch (error) {
-    console.warn('Could not check Puppeteer cache directory:', error);
   }
   
   // Try Puppeteer's default executable path
@@ -532,7 +564,21 @@ export async function generatePDF(
   try {
     // Find Chrome executable
     const chromePath = await findChrome();
-    if (!chromePath) {
+    
+    // Check if we're in Replit and system chromium is available
+    const isReplit = process.env.REPL_ID || process.env.REPLIT;
+    let executablePath = chromePath;
+    
+    if (isReplit && !chromePath) {
+      // In Replit, try to use system chromium if available
+      const systemChromium = '/nix/store/chromium/bin/chromium';
+      if (fs.existsSync(systemChromium)) {
+        executablePath = systemChromium;
+        console.log('Using Replit system Chromium');
+      }
+    }
+    
+    if (!executablePath) {
       console.error('Chrome not found in standard locations. Attempting to use Puppeteer default...');
     }
     
@@ -549,7 +595,7 @@ export async function generatePDF(
         '--single-process',
         '--no-zygote'
       ],
-      executablePath: chromePath || undefined,
+      executablePath: executablePath || undefined,
     });
   } catch (launchError: any) {
     console.error('Failed to launch browser:', launchError.message);
