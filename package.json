@@ -12,6 +12,8 @@
     "replit:start": "npm install && tsx src/api.ts",
     "docker": "tsx src/run.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:puppeteer": "node test-puppeteer-simple.js",
+    "test:pdf": "tsx test-pdf-generation.ts",
     "postinstall": "node -e \"try { require('puppeteer').executablePath() } catch(e) { console.log('Installing Chrome...'); require('child_process').execSync('npx puppeteer browsers install chrome', {stdio: 'inherit'}) }\""
   },
   "author": "",
