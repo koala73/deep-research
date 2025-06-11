@@ -104,34 +104,34 @@ const specialCharReplacements: Record<string, string> = {
   π: 'pi',
   Ω: 'omega',
   // Common quotation marks and dashes
-  '"': '"',
-  '"': '"',
-  ''': "'",
-  ''': "'",
-  '–': '-',
-  '—': '--',
-  '…': '...',
-  '•': '*',
-  '‣': '>',
-  '․': '.',
-  '‥': '..',
-  '⁃': '-',
-  '※': '*',
-  '‼': '!!',
-  '⁇': '?!',
-  '⁈': '?!',
-  '⁉': '!?',
+  '\u201C': '"',
+  '\u201D': '"',
+  '\u2018': "'",
+  '\u2019': "'",
+  '\u2013': '-',
+  '\u2014': '--',
+  '\u2026': '...',
+  '\u2022': '*',
+  '\u2023': '>',
+  '\u2024': '.',
+  '\u2025': '..',
+  '\u2043': '-',
+  '\u203B': '*',
+  '\u203C': '!!',
+  '\u2047': '?!',
+  '\u2048': '?!',
+  '\u2049': '!?',
   // Arrows
-  '←': '<-',
-  '→': '->',
-  '↑': '^',
-  '↓': 'v',
-  '↔': '<->',
-  '⇐': '<=',
-  '⇒': '=>',
-  '⇑': '^^',
-  '⇓': 'vv',
-  '⇔': '<=>',
+  '\u2190': '<-',
+  '\u2192': '->',
+  '\u2191': '^',
+  '\u2193': 'v',
+  '\u2194': '<->',
+  '\u21D0': '<=',
+  '\u21D2': '=>',
+  '\u21D1': '^^',
+  '\u21D3': 'vv',
+  '\u21D4': '<=>',
   // Fractions
   '¼': '1/4',
   '½': '1/2',
@@ -162,17 +162,17 @@ const specialCharReplacements: Record<string, string> = {
   '¸': ',',
   'ˆ': '^',
   '˜': '~',
-  '‰': 'o/oo',
-  '′': "'",
-  '″': '"',
-  '‴': "'''",
-  '‵': '`',
-  '‶': '``',
-  '‷': '```',
-  '‹': '<',
-  '›': '>',
-  '«': '<<',
-  '»': '>>',
+  '\u2030': 'o/oo',
+  '\u2032': "'",
+  '\u2033': '"',
+  '\u2034': "'''",
+  '\u2035': '`',
+  '\u2036': '``',
+  '\u2037': '```',
+  '\u2039': '<',
+  '\u203A': '>',
+  '\u00AB': '<<',
+  '\u00BB': '>>',
 };
 
 function sanitizeText(text: string): string {
@@ -194,14 +194,14 @@ function sanitizeText(text: string): string {
   sanitized = sanitized.replace(/[\x96-\x9F]/g, ''); // Remove more Windows-1252 control characters
   
   // Replace various bullet points and similar characters
-  sanitized = sanitized.replace(/[•·▪▫◦‣⁌⁍]/g, '*');
+  sanitized = sanitized.replace(/[\u2022\u00B7\u25AA\u25AB\u25E6\u2023\u204C\u204D]/g, '*');
   
   // Replace various dash characters
-  sanitized = sanitized.replace(/[‐‑‒–—―]/g, '-');
+  sanitized = sanitized.replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, '-');
   
   // Replace various quotation marks
-  sanitized = sanitized.replace(/[''‚‛]/g, "'");
-  sanitized = sanitized.replace(/[""„‟]/g, '"');
+  sanitized = sanitized.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+  sanitized = sanitized.replace(/[\u201C\u201D\u201E\u201F]/g, '"');
   
   // Remove zero-width characters
   sanitized = sanitized.replace(/[\u200B-\u200D\uFEFF]/g, '');
