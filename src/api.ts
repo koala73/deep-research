@@ -17,7 +17,7 @@ import { getJobLogs, log, withJobContext } from './logger';
 import { generatePDF } from './pdf-generator';
 
 const app = express();
-const port = parseInt(process.env.PORT || '3051', 10);
+const port = parseInt(process.env.PORT || '5000', 10);
 const accessKey = process.env.ACCESS_KEY;
 const reportsDir = path.join(process.cwd(), 'reports');
 if (!existsSync(reportsDir)) {
