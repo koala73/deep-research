@@ -4,15 +4,27 @@ import * as path from 'path';
 let marked: any;
 let puppeteer: any;
 let chromium: any;
+let chromiumPackage: any;
 
 try {
   marked = require('marked').marked;
   
-  // Try to use puppeteer-core with @sparticuz/chromium first (for serverless/Replit)
+  // Try different chromium/puppeteer combinations
   try {
+    // First try puppeteer-core with @sparticuz/chromium
     puppeteer = require('puppeteer-core');
-    chromium = require('@sparticuz/chromium');
-    console.log('Using puppeteer-core with @sparticuz/chromium');
+    try {
+      chromium = require('@sparticuz/chromium');
+      console.log('Using puppeteer-core with @sparticuz/chromium');
+    } catch (e) {
+      // Try the chromium npm package
+      try {
+        chromiumPackage = require('chromium');
+        console.log('Using puppeteer-core with chromium package');
+      } catch (e2) {
+        // No chromium package available
+      }
+    }
   } catch (e) {
     // Fall back to regular puppeteer
     puppeteer = require('puppeteer');
@@ -613,6 +625,19 @@ export async function generatePDF(
         headless: chromium.headless,
       };
       console.log('Launching with @sparticuz/chromium');
+    } else if (!launchOptions && chromiumPackage) {
+      // Use chromium npm package
+      launchOptions = {
+        executablePath: chromiumPackage.path,
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+      };
+      console.log('Launching with chromium npm package');
     } else if (!launchOptions) {
       // Fall back to standard Chrome detection
       const chromePath = await findChrome();
