@@ -17,7 +17,7 @@ fi
 # Install puppeteer with Chrome
 echo ""
 echo "3. Installing Puppeteer with Chrome..."
-npm install puppeteer@22.0.0 --save
+npm install puppeteer --save
 
 # Force Chrome installation
 echo ""

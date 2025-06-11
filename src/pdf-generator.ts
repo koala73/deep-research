@@ -583,7 +583,7 @@ export async function generatePDF(
     }
     
     // Launch Puppeteer with Replit-compatible settings
-    browser = await puppeteer.launch({
+    const launchOptions: any = {
       headless: 'new',
       args: [
         '--no-sandbox', 
@@ -592,11 +592,20 @@ export async function generatePDF(
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor',
         '--disable-gpu',
-        '--single-process',
-        '--no-zygote'
       ],
-      executablePath: executablePath || undefined,
-    });
+    };
+    
+    // Only add executablePath if we found one
+    if (executablePath) {
+      launchOptions.executablePath = executablePath;
+    }
+    
+    // For Replit, add additional args
+    if (isReplit) {
+      launchOptions.args.push('--single-process', '--no-zygote');
+    }
+    
+    browser = await puppeteer.launch(launchOptions);
   } catch (launchError: any) {
     console.error('Failed to launch browser:', launchError.message);
     throw new Error(`PDF generation failed: Chrome/Chromium not found. ${launchError.message}`);
