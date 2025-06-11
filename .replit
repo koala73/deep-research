@@ -5,22 +5,11 @@ hidden = [".config", "package-lock.json"]
 
 [nix]
 channel = "stable-23_11"
-packages = ["dejavu_fonts", "dejavu_fontsEnv", "chromium", "google-chrome"]
-
-[deps]
-# Puppeteer/Chromium dependencies for PDF generation
-chromium = "stable"
-chromium-sandbox = "stable"
-
-[env]
-PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "false"
-PUPPETEER_EXECUTABLE_PATH = "/nix/store/chromium/bin/chromium"
 
 [deployment]
-run = ["sh", "-c", "npm start api"]
+run = ["tsx", "src/api.ts"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
-build = ["sh", "-c", "npm install"]
 
 [rules]
   [rules.formatter]
@@ -49,31 +38,10 @@ language = "nodejs"
 language = "nodejs"
 
 [auth]
-pageEnabled = false
+pageEnabled = true
 buttonEnabled = false
 
 [[ports]]
 localPort = 3051
 externalPort = 80
-
-[workflows]
-runButton = "API Server (Auto-Restart)"
-
-[[workflows.workflow]]
-name = "API Server"
-author = 13301678
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run api"
-
-[[workflows.workflow]]
-name = "API Server (Auto-Restart)"
-author = 13301678
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run api:restart"
 
