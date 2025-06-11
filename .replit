@@ -5,6 +5,7 @@ hidden = [".config", "package-lock.json"]
 
 [nix]
 channel = "stable-23_11"
+packages = ["dejavu_fonts", "dejavu_fontsEnv"]
 
 [deps]
 # Puppeteer/Chromium dependencies for PDF generation
