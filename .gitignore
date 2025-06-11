@@ -44,3 +44,4 @@ yarn-error.log*
 *.pem
 bun.lockb
 report.md
+__pycache__/
