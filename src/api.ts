@@ -1,24 +1,23 @@
+import { existsSync, mkdirSync } from 'fs';
+import fs from 'fs/promises';
+import path from 'path';
 import cors from 'cors';
 import express, { Request, Response } from 'express';
-import fs from 'fs/promises';
-import { existsSync, mkdirSync } from 'fs';
-import path from 'path';
-
 import { v4 as uuidv4 } from 'uuid';
 
 import {
   deepResearch,
   generateReportTitle,
+  ResearchProgress,
   writeFinalAnswer,
   writeFinalReport,
-  ResearchProgress,
 } from './deep-research';
-import { generatePDF } from './pdf-generator';
 import { generateFeedback } from './feedback';
-import { log, withJobContext, getJobLogs } from './logger';
+import { getJobLogs, log, withJobContext } from './logger';
+import { generatePDF } from './pdf-generator';
 
 const app = express();
-const port = process.env.PORT || 3051;
+const port = parseInt(process.env.PORT || '3051', 10);
 const accessKey = process.env.ACCESS_KEY;
 const reportsDir = path.join(process.cwd(), 'reports');
 if (!existsSync(reportsDir)) {
@@ -34,7 +33,7 @@ app.use((req, res, next) => {
   if (req.path === '/keepalive' || req.path === '/') {
     return next();
   }
-  
+
   if (!accessKey) {
     return next();
   }
@@ -45,7 +44,6 @@ app.use((req, res, next) => {
   return res.status(401).json({ error: 'Unauthorized' });
 });
 
-
 // API endpoint to run research
 app.post('/api/research', async (req: Request, res: Response) => {
   try {
@@ -55,7 +53,9 @@ app.post('/api/research', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    log(`\nStarting research job for "${query}" (breadth: ${breadth}, depth: ${depth})`);
+    log(
+      `\nStarting research job for "${query}" (breadth: ${breadth}, depth: ${depth})`,
+    );
 
     const { learnings, visitedUrls } = await deepResearch({
       query,
@@ -128,7 +128,9 @@ app.post('/api/jobs', async (req: Request, res: Response) => {
     outputFormat,
   };
 
-  console.log(`[CONSOLE] Created job ${jobId}, total jobs in memory: ${Object.keys(jobs).length}`);
+  console.log(
+    `[CONSOLE] Created job ${jobId}, total jobs in memory: ${Object.keys(jobs).length}`,
+  );
   console.log(`[CONSOLE] All job IDs:`, Object.keys(jobs));
   log(
     `Created job ${jobId} for query "${query}" (breadth: ${breadth}, depth: ${depth})`,
@@ -156,32 +158,38 @@ app.post('/api/jobs/:id/answers', (req: Request, res: Response) => {
   }
 
   job.status = 'pending';
-  console.log(`[CONSOLE] Job ${id} started with answers:`, JSON.stringify(answers, null, 2));
+  console.log(
+    `[CONSOLE] Job ${id} started with answers:`,
+    JSON.stringify(answers, null, 2),
+  );
   log(`Job ${id} started with ${answers.length} answers`);
 
   const combinedQuery = `
 ${job.query}
 Follow-up Questions and Answers:
 ${job.followUpQuestions
-    ?.map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ''}`)
-    .join('\n')}`;
+  ?.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i] ?? ''}`)
+  .join('\n')}`;
 
   // Add job timeout protection
-  const jobTimeout = setTimeout(() => {
-    if (job.status === 'pending') {
-      console.error(`[TIMEOUT] Job ${id} timed out after 10 minutes`);
-      job.status = 'error';
-      job.error = 'Job timed out after 10 minutes';
-      log(`Job ${id} timed out`);
-      
-      // Clean up timed out job after 1 minute
-      setTimeout(() => {
-        delete jobs[id];
-        console.log(`[CONSOLE] Cleaned up timed out job ${id}`);
-        log(`Cleaned up timed out job ${id}`);
-      }, 60 * 1000);
-    }
-  }, 10 * 60 * 1000); // 10 minutes
+  const jobTimeout = setTimeout(
+    () => {
+      if (job.status === 'pending') {
+        console.error(`[TIMEOUT] Job ${id} timed out after 10 minutes`);
+        job.status = 'error';
+        job.error = 'Job timed out after 10 minutes';
+        log(`Job ${id} timed out`);
+
+        // Clean up timed out job after 1 minute
+        setTimeout(() => {
+          delete jobs[id];
+          console.log(`[CONSOLE] Cleaned up timed out job ${id}`);
+          log(`Cleaned up timed out job ${id}`);
+        }, 60 * 1000);
+      }
+    },
+    10 * 60 * 1000,
+  ); // 10 minutes
 
   withJobContext(id, async () => {
     try {
@@ -199,18 +207,28 @@ ${job.followUpQuestions
         depth: job.depth!,
         onProgress: progress => {
           job.progress = progress;
-          console.log(`[CONSOLE] Job ${id} progress: ${progress.completedQueries}/${progress.totalQueries} queries, depth ${progress.currentDepth}/${progress.totalDepth}`);
+          console.log(
+            `[CONSOLE] Job ${id} progress: ${progress.completedQueries}/${progress.totalQueries} queries, depth ${progress.currentDepth}/${progress.totalDepth}`,
+          );
           if (progress.currentQuery) {
-            console.log(`[CONSOLE] Current query: ${progress.currentQuery.substring(0, 100)}...`);
+            console.log(
+              `[CONSOLE] Current query: ${progress.currentQuery.substring(0, 100)}...`,
+            );
           }
           log(`Job ${id} progress:`, progress);
         },
       });
 
       const researchTime = Date.now() - startTime;
-      console.log(`[CONSOLE] Research completed for job ${id} in ${researchTime}ms`);
-      console.log(`[CONSOLE] Found ${learnings.length} learnings and ${visitedUrls.length} URLs`);
-      log(`Research completed for job ${id}, found ${learnings.length} learnings and ${visitedUrls.length} URLs`);
+      console.log(
+        `[CONSOLE] Research completed for job ${id} in ${researchTime}ms`,
+      );
+      console.log(
+        `[CONSOLE] Found ${learnings.length} learnings and ${visitedUrls.length} URLs`,
+      );
+      log(
+        `Research completed for job ${id}, found ${learnings.length} learnings and ${visitedUrls.length} URLs`,
+      );
 
       console.log(`[CONSOLE] Generating final report for job ${id}...`);
       const reportStartTime = Date.now();
@@ -226,7 +244,9 @@ ${job.followUpQuestions
       const reportUrl = `/api/reports/${id}`;
 
       const reportTime = Date.now() - reportStartTime;
-      console.log(`[CONSOLE] Report generated for job ${id} in ${reportTime}ms`);
+      console.log(
+        `[CONSOLE] Report generated for job ${id} in ${reportTime}ms`,
+      );
 
       job.report = report;
       job.reportUrl = reportUrl;
@@ -236,7 +256,7 @@ ${job.followUpQuestions
           prompt: combinedQuery,
           learnings,
         });
-        
+
         const pdfPath = `/tmp/report-${id}.pdf`;
         await generatePDF(report, pdfPath, { title: reportTitle });
         job.reportPdf = await fs.readFile(pdfPath);
@@ -247,13 +267,16 @@ ${job.followUpQuestions
       job.status = 'completed';
       console.log(`[CONSOLE] ====== JOB ${id} COMPLETED SUCCESSFULLY ======`);
       log(`Job ${id} completed successfully`);
-      
+
       // Clean up completed job after 5 minutes to free memory
-      setTimeout(() => {
-        delete jobs[id];
-        console.log(`[CONSOLE] Cleaned up completed job ${id}`);
-        log(`Cleaned up completed job ${id}`);
-      }, 5 * 60 * 1000);
+      setTimeout(
+        () => {
+          delete jobs[id];
+          console.log(`[CONSOLE] Cleaned up completed job ${id}`);
+          log(`Cleaned up completed job ${id}`);
+        },
+        5 * 60 * 1000,
+      );
     } catch (error: any) {
       clearTimeout(jobTimeout);
       job.status = 'error';
@@ -265,16 +288,19 @@ ${job.followUpQuestions
         name: error?.name,
         message: error?.message,
         stack: error?.stack,
-        cause: error?.cause
+        cause: error?.cause,
       });
       log(`Job ${id} error:`, job.error);
-      
+
       // Clean up errored job after 2 minutes to free memory
-      setTimeout(() => {
-        delete jobs[id];
-        console.log(`[CONSOLE] Cleaned up errored job ${id}`);
-        log(`Cleaned up errored job ${id}`);
-      }, 2 * 60 * 1000);
+      setTimeout(
+        () => {
+          delete jobs[id];
+          console.log(`[CONSOLE] Cleaned up errored job ${id}`);
+          log(`Cleaned up errored job ${id}`);
+        },
+        2 * 60 * 1000,
+      );
     }
   }).catch(error => {
     clearTimeout(jobTimeout);
@@ -282,7 +308,7 @@ ${job.followUpQuestions
     job.status = 'error';
     job.error = `Context error: ${error.message}`;
     log(`Job ${id} context error:`, error.message);
-    
+
     // Clean up context-errored job after 1 minute
     setTimeout(() => {
       delete jobs[id];
@@ -322,12 +348,12 @@ app.get('/api/jobs', (req: Request, res: Response) => {
     id,
     status: job.status,
     query: job.query,
-    created: 'unknown' // We don't track creation time currently
+    created: 'unknown', // We don't track creation time currently
   }));
 
-  return res.json({ 
+  return res.json({
     totalJobs: Object.keys(jobs).length,
-    jobs: jobList 
+    jobs: jobList,
   });
 });
 
@@ -339,9 +365,9 @@ app.delete('/api/jobs', (req: Request, res: Response) => {
   console.log(`[CONSOLE] Cleared ${clearedCount} jobs from memory`);
   log(`Cleared ${clearedCount} jobs from memory`);
 
-  return res.json({ 
+  return res.json({
     message: `Cleared ${clearedCount} jobs`,
-    totalJobs: Object.keys(jobs).length
+    totalJobs: Object.keys(jobs).length,
   });
 });
 
@@ -357,31 +383,34 @@ app.get('/api/jobs/:id/pdf', (req: Request, res: Response) => {
   }
 
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="research-report-${req.params.id}.pdf"`);
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="research-report-${req.params.id}.pdf"`,
+  );
   return res.send(job.reportPdf);
 });
 
 // Health check endpoint for deployment
 app.get('/', (req: Request, res: Response) => {
-  return res.status(200).json({ 
+  return res.status(200).json({
     status: 'healthy',
     service: 'deep-research-api',
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Keepalive endpoint for Replit uptime monitoring
 app.get('/keepalive', (req: Request, res: Response) => {
   log(`Keepalive check at ${new Date().toISOString()}`);
-  return res.status(200).json({ 
+  return res.status(200).json({
     status: 'ok',
     service: 'deep-research-api',
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Global error handlers
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('[FATAL] Uncaught Exception:', error);
   console.error('Stack:', error.stack);
   log(`FATAL: Uncaught Exception - ${error.message}`);
@@ -390,7 +419,12 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[FATAL] Unhandled Promise Rejection at:', promise, 'reason:', reason);
+  console.error(
+    '[FATAL] Unhandled Promise Rejection at:',
+    promise,
+    'reason:',
+    reason,
+  );
   log(`FATAL: Unhandled Promise Rejection - ${reason}`);
   // Don't exit immediately, let current operations complete
   setTimeout(() => process.exit(1), 1000);
@@ -417,10 +451,10 @@ app.use((error: any, req: Request, res: Response, next: any) => {
     return next(error);
   }
 
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Internal server error',
     message: error.message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -439,7 +473,9 @@ server.on('error', (error: any) => {
 // Keep alive monitoring
 setInterval(() => {
   const memUsage = process.memoryUsage();
-  console.log(`[MONITOR] Memory usage: RSS=${Math.round(memUsage.rss/1024/1024)}MB, Heap=${Math.round(memUsage.heapUsed/1024/1024)}MB`);
+  console.log(
+    `[MONITOR] Memory usage: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+  );
   console.log(`[MONITOR] Active jobs: ${Object.keys(jobs).length}`);
 }, 30000); // Log every 30 seconds
 

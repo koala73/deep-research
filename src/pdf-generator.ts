@@ -70,12 +70,12 @@ const specialCharReplacements: Record<string, string> = {
   '√': 'sqrt',
   '∑': 'sum',
   '∏': 'product',
-  'α': 'alpha',
-  'β': 'beta',
-  'γ': 'gamma',
-  'δ': 'delta',
-  'π': 'pi',
-  'Ω': 'omega',
+  α: 'alpha',
+  β: 'beta',
+  γ: 'gamma',
+  δ: 'delta',
+  π: 'pi',
+  Ω: 'omega',
 };
 
 function sanitizeText(text: string): string {
@@ -334,28 +334,28 @@ export async function generatePDF(
   config: Partial<PDFConfig> = {},
 ): Promise<void> {
   const fullConfig = { ...defaultConfig, ...config };
-  
+
   // Generate HTML from markdown
   const html = generateHTML(markdownContent, fullConfig);
-  
+
   // Save HTML temporarily for debugging (optional)
   const tempHtmlPath = outputPath.replace('.pdf', '.html');
   await fs.writeFile(tempHtmlPath, html, 'utf-8');
-  
+
   // Launch Puppeteer
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
-  
+
   try {
     const page = await browser.newPage();
-    
+
     // Set content
     await page.setContent(html, {
       waitUntil: 'networkidle0',
     });
-    
+
     // Generate PDF
     await page.pdf({
       path: outputPath,
@@ -369,10 +369,9 @@ export async function generatePDF(
         left: `${fullConfig.margin}mm`,
       },
     });
-    
+
     // Clean up temporary HTML file
     await fs.unlink(tempHtmlPath).catch(() => {});
-    
   } finally {
     await browser.close();
   }

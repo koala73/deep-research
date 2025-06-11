@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { describe, it, beforeEach } from 'node:test';
+import { beforeEach, describe, it } from 'node:test';
+
 import { RecursiveCharacterTextSplitter } from './text-splitter';
 
 describe('RecursiveCharacterTextSplitter', () => {
@@ -16,34 +17,34 @@ describe('RecursiveCharacterTextSplitter', () => {
     const text = 'Hello world, this is a test of the recursive text splitter.';
 
     // Test with initial chunkSize
-    assert.deepEqual(
-      splitter.splitText(text),
-      ['Hello world', 'this is a test of the recursive text splitter']
-    );
+    assert.deepEqual(splitter.splitText(text), [
+      'Hello world',
+      'this is a test of the recursive text splitter',
+    ]);
 
     // Test with updated chunkSize
     splitter.chunkSize = 100;
     assert.deepEqual(
       splitter.splitText(
-        'Hello world, this is a test of the recursive text splitter. If I have a period, it should split along the period.'
+        'Hello world, this is a test of the recursive text splitter. If I have a period, it should split along the period.',
       ),
       [
         'Hello world, this is a test of the recursive text splitter',
         'If I have a period, it should split along the period.',
-      ]
+      ],
     );
 
     // Test with another updated chunkSize
     splitter.chunkSize = 110;
     assert.deepEqual(
       splitter.splitText(
-        'Hello world, this is a test of the recursive text splitter. If I have a period, it should split along the period.\nOr, if there is a new line, it should prioritize splitting on new lines instead.'
+        'Hello world, this is a test of the recursive text splitter. If I have a period, it should split along the period.\nOr, if there is a new line, it should prioritize splitting on new lines instead.',
       ),
       [
         'Hello world, this is a test of the recursive text splitter',
         'If I have a period, it should split along the period.',
         'Or, if there is a new line, it should prioritize splitting on new lines instead.',
-      ]
+      ],
     );
   });
 
@@ -56,14 +57,17 @@ describe('RecursiveCharacterTextSplitter', () => {
     splitter.chunkSize = 200;
     assert.deepEqual(
       splitter.splitText(largeText),
-      Array(5).fill('A'.repeat(200))
+      Array(5).fill('A'.repeat(200)),
     );
 
     const specialCharText = 'Hello!@# world$%^ &*( this) is+ a-test';
-    assert.deepEqual(
-      splitter.splitText(specialCharText),
-      ['Hello!@#', 'world$%^', '&*( this)', 'is+', 'a-test']
-    );
+    assert.deepEqual(splitter.splitText(specialCharText), [
+      'Hello!@#',
+      'world$%^',
+      '&*( this)',
+      'is+',
+      'a-test',
+    ]);
   });
 
   it('Should handle chunkSize equal to chunkOverlap', () => {
@@ -71,7 +75,7 @@ describe('RecursiveCharacterTextSplitter', () => {
     splitter.chunkOverlap = 50;
     assert.throws(
       () => splitter.splitText('Invalid configuration'),
-      new Error('Cannot have chunkOverlap >= chunkSize')
+      new Error('Cannot have chunkOverlap >= chunkSize'),
     );
   });
 });

@@ -8,9 +8,9 @@ import {
   writeFinalAnswer,
   writeFinalReport,
 } from './deep-research';
-import { generatePDF } from './pdf-generator';
 import { generateFeedback } from './feedback';
 import { log } from './logger';
+import { generatePDF } from './pdf-generator';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -110,14 +110,14 @@ ${followUpQuestions.map((q: string, i: number) => `Q: ${q}\nA: ${answers[i]}`).j
 
     await fs.writeFile('report.md', report, 'utf-8');
     log(`\n\nFinal Report:\n\n${report}`);
-    
+
     if (isPDF) {
       log('\nGenerating PDF...');
       const reportTitle = await generateReportTitle({
         prompt: combinedQuery,
         learnings,
       });
-      
+
       await generatePDF(report, 'report.pdf', { title: reportTitle });
       log('\nReport has been saved to report.pdf');
     } else {

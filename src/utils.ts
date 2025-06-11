@@ -1,4 +1,5 @@
 import { generateObject } from 'ai';
+
 import { log } from './logger';
 
 /**
@@ -10,7 +11,7 @@ import { log } from './logger';
 export async function generateObjectWithRetry<T>(
   options: any,
   retries = 2,
-): Promise<T> {
+): Promise<any> {
   let lastError: unknown;
 
   const extractJSON = (text: string) => {
@@ -25,7 +26,7 @@ export async function generateObjectWithRetry<T>(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      return await generateObject<T>(options);
+      return await generateObject(options);
     } catch (err: any) {
       lastError = err;
       log(`generateObject attempt ${attempt + 1} failed`, err);

@@ -1,11 +1,12 @@
 import FirecrawlApp, { SearchResponse } from '@mendable/firecrawl-js';
+import { generateText } from 'ai';
 import { compact } from 'lodash-es';
 import pLimit from 'p-limit';
 import { z } from 'zod';
 
 import { getModel, trimPrompt } from './ai/providers';
-import { systemPrompt } from './prompt';
 import { log } from './logger';
+import { systemPrompt } from './prompt';
 import { generateObjectWithRetry } from './utils';
 
 export type ResearchProgress = {
@@ -70,7 +71,10 @@ async function generateSerpQueries({
         .describe(`List of SERP queries, max of ${numQueries}`),
     }),
   });
-  console.log(`[CONSOLE] Generated ${res.object.queries.length} SERP queries:`, res.object.queries.map(q => q.query));
+  console.log(
+    `[CONSOLE] Generated ${res.object.queries.length} SERP queries:`,
+    res.object.queries.map(q => q.query),
+  );
   log(`Created ${res.object.queries.length} queries`, res.object.queries);
 
   return res.object.queries.slice(0, numQueries);
@@ -87,10 +91,12 @@ async function processSerpResult({
   numLearnings?: number;
   numFollowUpQuestions?: number;
 }) {
-  const contents = compact(result.data.map(item => item.markdown)).map(content =>
-    trimPrompt(content, 25_000),
+  const contents = compact(result.data.map(item => item.markdown)).map(
+    content => trimPrompt(content, 25_000),
   );
-  console.log(`[CONSOLE] Processed SERP result for "${query}", found ${contents.length} contents`);
+  console.log(
+    `[CONSOLE] Processed SERP result for "${query}", found ${contents.length} contents`,
+  );
   log(`Ran ${query}, found ${contents.length} contents`);
 
   const res = await generateObjectWithRetry({
@@ -103,7 +109,9 @@ async function processSerpResult({
         .join('\n')}</contents>`,
     ),
     schema: z.object({
-      learnings: z.array(z.string()).describe(`List of learnings, max of ${numLearnings}`),
+      learnings: z
+        .array(z.string())
+        .describe(`List of learnings, max of ${numLearnings}`),
       followUpQuestions: z
         .array(z.string())
         .describe(
@@ -150,7 +158,8 @@ export async function writeFinalReport({
   const chunkSize = Number(process.env.REPORT_CHUNK_SIZE) || 20;
   const sections: string[] = [];
   for (let i = 0; i < learnings.length; i += chunkSize) {
-    const chunk = learnings.slice(i, i + chunkSize)
+    const chunk = learnings
+      .slice(i, i + chunkSize)
       .map(l => `<learning>\n${l}\n</learning>`)
       .join('\n');
 
@@ -161,7 +170,9 @@ export async function writeFinalReport({
         `You are writing a detailed research report in Markdown. Continue from previous sections if provided.\n\n<prompt>${prompt}</prompt>\n\nHere are some learnings for this section:\n\n<learnings>\n${chunk}\n</learnings>`,
       ),
       schema: z.object({
-        reportMarkdown: z.string().describe('Markdown section of the final report'),
+        reportMarkdown: z
+          .string()
+          .describe('Markdown section of the final report'),
       }),
     });
 
@@ -194,7 +205,9 @@ export async function writeFinalAnswer({
     schema: z.object({
       exactAnswer: z
         .string()
-        .describe('The final answer, make it short and concise, just the answer, no other text'),
+        .describe(
+          'The final answer, make it short and concise, just the answer, no other text',
+        ),
     }),
   });
 
@@ -216,10 +229,14 @@ export async function deepResearch({
   visitedUrls?: string[];
   onProgress?: (progress: ResearchProgress) => void;
 }): Promise<ResearchResult> {
-  console.log(`[DEEP_RESEARCH] Starting deep research - breadth: ${breadth}, depth: ${depth}`);
+  console.log(
+    `[DEEP_RESEARCH] Starting deep research - breadth: ${breadth}, depth: ${depth}`,
+  );
   console.log(`[DEEP_RESEARCH] Query: ${query.substring(0, 200)}...`);
-  console.log(`[DEEP_RESEARCH] Existing learnings: ${learnings.length}, URLs: ${visitedUrls.length}`);
-  
+  console.log(
+    `[DEEP_RESEARCH] Existing learnings: ${learnings.length}, URLs: ${visitedUrls.length}`,
+  );
+
   const progress: ResearchProgress = {
     currentDepth: depth,
     totalDepth: depth,
@@ -249,14 +266,18 @@ export async function deepResearch({
 
   const limit = pLimit(ConcurrencyLimit);
 
-  console.log(`[DEEP_RESEARCH] Processing ${serpQueries.length} queries with concurrency limit ${ConcurrencyLimit}`);
-  
+  console.log(
+    `[DEEP_RESEARCH] Processing ${serpQueries.length} queries with concurrency limit ${ConcurrencyLimit}`,
+  );
+
   const results = await Promise.all(
     serpQueries.map((serpQuery, index) =>
       limit(async () => {
         try {
-          console.log(`[DEEP_RESEARCH] Processing query ${index + 1}/${serpQueries.length}: ${serpQuery.query.substring(0, 100)}...`);
-          
+          console.log(
+            `[DEEP_RESEARCH] Processing query ${index + 1}/${serpQueries.length}: ${serpQuery.query.substring(0, 100)}...`,
+          );
+
           const searchStartTime = Date.now();
           const result = await firecrawl.search(serpQuery.query, {
             timeout: 15000,
@@ -264,7 +285,9 @@ export async function deepResearch({
             scrapeOptions: { formats: ['markdown'] },
           });
           const searchTime = Date.now() - searchStartTime;
-          console.log(`[DEEP_RESEARCH] Search completed in ${searchTime}ms, found ${result.data.length} results`);
+          console.log(
+            `[DEEP_RESEARCH] Search completed in ${searchTime}ms, found ${result.data.length} results`,
+          );
 
           // Collect URLs from this search
           const newUrls = compact(result.data.map(item => item.url));
@@ -280,7 +303,9 @@ export async function deepResearch({
           const allUrls = [...visitedUrls, ...newUrls];
 
           if (newDepth > 0) {
-            log(`Researching deeper, breadth: ${newBreadth}, depth: ${newDepth}`);
+            log(
+              `Researching deeper, breadth: ${newBreadth}, depth: ${newDepth}`,
+            );
 
             reportProgress({
               currentDepth: newDepth,
