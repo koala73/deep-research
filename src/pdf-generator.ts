@@ -14,8 +14,30 @@ try {
   puppeteer = {
     launch: async () => {
       throw new Error('Puppeteer not installed. Please run: npm install puppeteer');
-    }
+    },
+    executablePath: () => null
   };
+}
+
+// Helper to find Chrome executable
+async function findChrome(): Promise<string | undefined> {
+  const possiblePaths = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/nix/store/chromium/bin/chromium',
+    puppeteer.executablePath?.() || null
+  ].filter(Boolean);
+
+  for (const path of possiblePaths) {
+    if (path && require('fs').existsSync(path)) {
+      return path;
+    }
+  }
+  
+  return undefined;
 }
 
 export interface PDFConfig {
@@ -476,17 +498,33 @@ export async function generatePDF(
   const tempHtmlPath = outputPath.replace('.pdf', '.html');
   await fs.writeFile(tempHtmlPath, html, 'utf-8');
 
-  // Launch Puppeteer
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox', 
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-web-security',
-      '--disable-features=VizDisplayCompositor'
-    ],
-  });
+  let browser;
+  try {
+    // Find Chrome executable
+    const chromePath = await findChrome();
+    if (!chromePath) {
+      console.error('Chrome not found in standard locations. Attempting to use Puppeteer default...');
+    }
+    
+    // Launch Puppeteer with Replit-compatible settings
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote'
+      ],
+      executablePath: chromePath || undefined,
+    });
+  } catch (launchError: any) {
+    console.error('Failed to launch browser:', launchError.message);
+    throw new Error(`PDF generation failed: Chrome/Chromium not found. ${launchError.message}`);
+  }
 
   try {
     const page = await browser.newPage();

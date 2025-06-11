@@ -5,12 +5,16 @@ hidden = [".config", "package-lock.json"]
 
 [nix]
 channel = "stable-23_11"
-packages = ["dejavu_fonts", "dejavu_fontsEnv"]
+packages = ["dejavu_fonts", "dejavu_fontsEnv", "chromium", "google-chrome"]
 
 [deps]
 # Puppeteer/Chromium dependencies for PDF generation
 chromium = "stable"
 chromium-sandbox = "stable"
+
+[env]
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "false"
+PUPPETEER_EXECUTABLE_PATH = "/nix/store/chromium/bin/chromium"
 
 [deployment]
 run = ["sh", "-c", "npm start api"]
