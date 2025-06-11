@@ -43,7 +43,7 @@ pageEnabled = true
 buttonEnabled = false
 
 [[ports]]
-localPort = 3051
+localPort = 5000
 externalPort = 80
 
 [workflows]
