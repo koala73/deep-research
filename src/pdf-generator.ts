@@ -21,6 +21,7 @@ try {
 
 // Helper to find Chrome executable
 async function findChrome(): Promise<string | undefined> {
+  const fs = require('fs');
   const possiblePaths = [
     process.env.PUPPETEER_EXECUTABLE_PATH,
     '/usr/bin/chromium',
@@ -28,13 +29,42 @@ async function findChrome(): Promise<string | undefined> {
     '/usr/bin/google-chrome',
     '/usr/bin/google-chrome-stable',
     '/nix/store/chromium/bin/chromium',
-    puppeteer.executablePath?.() || null
   ].filter(Boolean);
 
+  // Check standard paths first
   for (const path of possiblePaths) {
-    if (path && require('fs').existsSync(path)) {
+    if (path && fs.existsSync(path)) {
       return path;
     }
+  }
+  
+  // Check Puppeteer cache directory dynamically
+  try {
+    const puppeteerCachePath = process.env.PUPPETEER_CACHE_DIR || '/home/runner/.cache/puppeteer/chrome';
+    if (fs.existsSync(puppeteerCachePath)) {
+      const chromeVersions = fs.readdirSync(puppeteerCachePath).filter((dir: string) => dir.startsWith('linux-'));
+      if (chromeVersions.length > 0) {
+        // Use the most recent version
+        const latestVersion = chromeVersions.sort().reverse()[0];
+        const chromePath = `${puppeteerCachePath}/${latestVersion}/chrome-linux64/chrome`;
+        if (fs.existsSync(chromePath)) {
+          console.log(`Found Chrome at: ${chromePath}`);
+          return chromePath;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Could not check Puppeteer cache directory:', error);
+  }
+  
+  // Try Puppeteer's default executable path
+  try {
+    const defaultPath = puppeteer.executablePath?.();
+    if (defaultPath && fs.existsSync(defaultPath)) {
+      return defaultPath;
+    }
+  } catch (error) {
+    console.warn('Could not get Puppeteer default path:', error);
   }
   
   return undefined;
