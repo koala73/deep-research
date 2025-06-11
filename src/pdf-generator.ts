@@ -598,7 +598,7 @@ export async function generatePDF(
   try {
     let launchOptions: any;
     
-    // First, check if we have a chrome-config.json file (for Replit)
+    // First, check if we have a chrome-config.json file (for custom configurations)
     try {
       const configPath = path.join(process.cwd(), 'chrome-config.json');
       if (await fs.access(configPath).then(() => true).catch(() => false)) {
@@ -611,7 +611,7 @@ export async function generatePDF(
         console.log('Using chrome-config.json configuration');
       }
     } catch (e) {
-      // Config file not found or invalid
+      // Config file not found or invalid - this is fine, we'll use defaults
     }
     
     // If no config file, check if we're using @sparticuz/chromium
