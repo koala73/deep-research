@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Research Test Report</title>
+  <style>
+    
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    @font-face {
+      font-family: 'fallback';
+      src: local('Arial'), local('Helvetica'), local('sans-serif');
+    }
+    
+    body {
+      font-family: 'Inter', Arial, Helvetica, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      font-size: 12pt;
+      line-height: 1.6;
+      color: #2d3748;
+      background: white;
+      padding: 20mm;
+    }
+    
+    .report-header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #4a5568;
+    }
+    
+    .report-title {
+      font-size: 24pt;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 10px;
+    }
+    
+    .report-date {
+      font-size: 10pt;
+      color: #718096;
+    }
+    
+    h1 {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #2563eb;
+      margin: 30px 0 15px 0;
+      page-break-after: avoid;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    
+    h2 {
+      font-size: 16pt;
+      font-weight: 600;
+      color: #3730a3;
+      margin: 25px 0 12px 0;
+      page-break-after: avoid;
+    }
+    
+    h3 {
+      font-size: 14pt;
+      font-weight: 600;
+      color: #4c1d95;
+      margin: 20px 0 10px 0;
+      page-break-after: avoid;
+    }
+    
+    p {
+      margin: 0 0 12px 0;
+      text-align: justify;
+    }
+    
+    ul, ol {
+      margin: 0 0 12px 20px;
+      padding-left: 20px;
+    }
+    
+    li {
+      margin-bottom: 6px;
+    }
+    
+    code {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.9em;
+      color: #e53e3e;
+    }
+    
+    pre {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 0 0 12px 0;
+      page-break-inside: avoid;
+    }
+    
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: #2d3748;
+    }
+    
+    blockquote {
+      border-left: 4px solid #4a5568;
+      padding-left: 16px;
+      margin: 0 0 12px 0;
+      color: #4a5568;
+      font-style: italic;
+    }
+    
+    a {
+      color: #2563eb;
+      text-decoration: none;
+      border-bottom: 1px solid #93c5fd;
+      transition: all 0.2s;
+    }
+    
+    a:hover {
+      color: #1d4ed8;
+      border-bottom-color: #1d4ed8;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 12px 0;
+      page-break-inside: avoid;
+    }
+    
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    
+    th {
+      background: #f7fafc;
+      font-weight: 600;
+      color: #1a202c;
+    }
+    
+    tr:nth-child(even) {
+      background: #f9fafb;
+    }
+    
+    .page-break {
+      page-break-after: always;
+    }
+    
+    .footer {
+      position: fixed;
+      bottom: 20mm;
+      left: 20mm;
+      right: 20mm;
+      text-align: center;
+      font-size: 10pt;
+      color: #718096;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    @media print {
+      body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+    
+    .sources-section {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e2e8f0;
+    }
+    
+    .source-item {
+      margin-bottom: 8px;
+      padding-left: 20px;
+      text-indent: -20px;
+      word-break: break-word;
+    }
+    
+    .source-number {
+      color: #4a5568;
+      font-weight: 600;
+    }
+  
+  </style>
+</head>
+<body>
+  <div class="report-header">
+    <h1 class="report-title">Deep Research Test Report</h1>
+    <div class="report-date">Generated on June 11, 2025</div>
+  </div>
+  
+  <div class="content">
+    <h1>Deep Research PDF Test Report ## Executive Summary This is a test report to validate PDF generation on Replit with Chromium. ## Environment Information - <strong>Platform</strong>: linux - <strong>Node Version</strong>: v20.18.1 - <strong>Running on Replit</strong>: true - <strong>Test Time</strong>: 2025-06-11T14:20:34.812Z ## Features Being Tested ### 1. Chromium Integration Testing if the system can properly detect and use Chromium installed via Nix packages. ### 2. PDF Generation Verifying that Puppeteer can launch Chromium and generate PDFs successfully. ### 3. Special Characters Testing Unicode support: EUR GBP YEN (TM) (c) (R) alpha beta gamma pi sum &lt;= &gt;= != ### 4. Code Blocks <code>javascript // Example code async function generateReport() { const report = await deepResearch(query); return report; } </code> ## Conclusion If you can read this PDF, the system is working correctly! --- <em>Generated by Deep Research PDF Generator</em></h1>
+
+  </div>
+  
+  <div class="footer">
+    Page <span class="page-number"></span>
+  </div>
+</body>
+</html>
+  
